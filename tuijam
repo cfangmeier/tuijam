@@ -1,35 +1,6 @@
-import signal
-
+#!/usr/bin/env python3
 import urwid
-from gmusicapi import Mobileclient
-
-log = []
-
-# ######################################################33
-# ######################################################33
-
-def build_search_collection(N):
-    from random import choice
-    songs = ['one', 'another on bites the dust', 'enter sandman', 'piano man', 'dance of death']
-    artists = ['metallica', 'iron maiden', 'judas priest', 'haken']
-    albums = ['some kind of bird egg', 'electric boogaloo', 'another time', '13']
-    years = [1967, 2066, 1924, 1098]
-
-    types = (Song, Artist, Album)
-    collection = []
-    for _ in range(N):
-        type_ = choice(types)
-        if type_ == Song:
-            collection.append(Song(choice(songs), choice(artists), choice(albums), 0))
-        elif type_ == Artist:
-            collection.append(Artist(choice(artists)))
-        else:
-            collection.append(Album(choice(albums), choice(artists), choice(years)))
-    return (list(filter(lambda o: type(o) == Song, collection)),
-            list(filter(lambda o: type(o) == Album, collection)),
-            list(filter(lambda o: type(o) == Artist, collection)))
-# ######################################################33
-# ######################################################33
+import gmusicapi
 
 
 class MusicObject:
@@ -51,9 +22,10 @@ class MusicObject:
 
 
 class Song(MusicObject):
-    def __init__(self, title, album, artist, id_):
+    def __init__(self, title, album, albumId, artist, id_):
         self.title = title
         self.album = album
+        self.albumId = albumId
         self.artist = artist
         self.id = id_
 
@@ -70,6 +42,17 @@ class Song(MusicObject):
     def header():
         return MusicObject.header_ui('Title', 'Album', 'Artist')
 
+    @staticmethod
+    def from_dict(d):
+        title = d['title']
+        album = d['album']
+        albumId = d['albumId']
+        artist = d['artist']
+        try:
+            id_ = d['id']
+        except KeyError:
+            id_ = d['storeId']
+        return Song(title, album, albumId, artist, id_)
 
 
 class Album(MusicObject):
@@ -89,10 +72,19 @@ class Album(MusicObject):
     def header():
         return MusicObject.header_ui('Album', 'Artist', 'Year')
 
+    @staticmethod
+    def from_dict(d):
+        title = d['name']
+        artist = d['albumArtist']
+        year = d['year']
+        id_ = d['albumId']
+        return Album(title, artist, year, id_)
+
 
 class Artist(MusicObject):
-    def __init__(self, name):
+    def __init__(self, name, id_):
         self.name = name
+        self.id = id_
 
     def __repr__(self):
         return f'<Artist name:{self.name}>'
@@ -103,6 +95,12 @@ class Artist(MusicObject):
     @staticmethod
     def header():
         return MusicObject.header_ui('Artist')
+
+    @staticmethod
+    def from_dict(d):
+        name = d['name']
+        id_ = d['artistId']
+        return Artist(name, id_)
 
 
 class CommandInput(urwid.Edit):
@@ -133,6 +131,8 @@ class SearchPanel(urwid.ListBox):
             selected = self.selected_search_obj()
             if selected and type(selected) in (Song, Album):
                 self.app.queue_panel.add_to_queue(selected)
+        elif key == 'e':
+            self.app.expand(self.selected_search_obj())
         elif key == 'j':
             super().keypress(size, 'down')
         elif key == 'k':
@@ -206,6 +206,11 @@ class QueuePanel(urwid.ListBox):
             ui1, ui2 = self.walker[idx1], self.walker[idx2]
             self.walker[idx1], self.walker[idx2] = ui2, ui1
 
+    def play_next(self):
+        if self.walker:
+            self.walker.pop(0)
+            self.app.play(self.queue.pop(0))
+
     def keypress(self, size, key):
         focus_id = self.walker.get_focus()[1]
         if focus_id is None:
@@ -225,8 +230,7 @@ class QueuePanel(urwid.ListBox):
             super().keypress(size, 'up')
         elif key == ' ':
             if self.app.play_state == 'stop':
-                self.walker.pop()
-                self.app.play(self.queue.pop())
+                self.play_next()
             else:
                 self.app.toggle_play()
         else:
@@ -248,12 +252,18 @@ class App(urwid.Pile):
 
     def __init__(self):
 
-        self.g_api = Mobileclient()
-        deviceid = "3d9cf4c429a3e170"
-        self.g_api.login('cfangmeier74@gmail.com', 'fnqugbdwjyfoqbxf', deviceid)
+        self.read_config()
 
-        import app.mpv as mpv
+        self.g_api = gmusicapi.Mobileclient()
+        self.g_api.login(self.email, self.password, self.device_id)
+
+        import mpv
         self.player = mpv.MPV()
+
+        @self.player.event_callback('end_file')
+        def callback(event):
+            if event['event']['reason'] == 0:
+                self.queue_panel.play_next()
 
         self.search_panel = SearchPanel(self)
         search_panel_wrapped = urwid.LineBox(self.search_panel, title='Search Results')
@@ -283,6 +293,16 @@ class App(urwid.Pile):
         self.play_state = 'stop'
         self.current_song = None
 
+    def read_config(self):
+        from os.path import join, expanduser
+        import yaml
+        config_file = join(expanduser('~'), '.config', 'tuijam', 'config.yaml')
+        with open(config_file) as f:
+            config = yaml.load(f.read())
+            self.email = config['email']
+            self.password = config['password']
+            self.device_id = config['device_id']
+
     @staticmethod
     def sec_to_min_sec(sec_tot):
         if sec_tot is None:
@@ -303,16 +323,26 @@ class App(urwid.Pile):
             total_time = (0, 0)
         self.progress.set_text(f'{curr_time[0]}:{curr_time[1]:02d}/{total_time[0]}:{total_time[1]:02d}')
 
-    def update_now_playing(self, *args, **kwargs):
+    def update_now_playing(self):
+        msg = str(self.player.playlist)
+        msg = ''
         if self.play_state == 'play':
             self.update_progress()
-            self.now_playing.set_text(f'Now Playing: {str(self.current_song)}')
-            self.loop.set_alarm_in(1, self.update_now_playing)
+            self.now_playing.set_text(f'Now Playing: {str(self.current_song)}, {msg}')
+            self.schedule_refresh()
         elif self.play_state == 'pause':
             self.update_progress()
-            self.now_playing.set_text(f'Paused: {str(self.current_song)}')
+            self.now_playing.set_text(f'Paused: {str(self.current_song)}, {msg}')
         else:
             self.now_playing.set_text('')
+
+    def refresh(self, *args, **kwargs):
+        if self.play_state == 'play' and self.player.eof_reached:
+            self.queue_panel.play_next()
+        self.update_now_playing()
+
+    def schedule_refresh(self, dt=0.2):
+        self.loop.set_alarm_in(dt, self.refresh)
 
     def play(self, song):
         self.current_song = song
@@ -320,13 +350,19 @@ class App(urwid.Pile):
         self.player.play(url)
         self.play_state = 'play'
         self.update_now_playing()
-        self.loop.set_alarm_in(1, self.update_now_playing)
+        self.schedule_refresh()
 
     def stop(self, song):
         self.current_song = None
         self.player.quit()
         self.play_state = 'stop'
         self.update_now_playing()
+
+    def seek(self, dt):
+        try:
+            self.player.seek(dt)
+        except SystemError:
+            pass
 
     def toggle_play(self):
         if self.play_state == 'play':
@@ -337,7 +373,7 @@ class App(urwid.Pile):
             self.player.pause = False
             self.play_state = 'play'
             self.update_now_playing()
-            self.loop.set_alarm_in(1, self.update_now_playing)
+            self.schedule_refresh()
 
     def keypress(self, size, key):
         if key == 'tab':
@@ -360,8 +396,30 @@ class App(urwid.Pile):
             self.toggle_play()
         elif key == 'ctrl q':
             self.stop()
+        elif key == '>':
+            self.seek(10)
+        elif key == '<':
+            self.seek(-10)
+        elif key == 'ctrl n':
+            self.queue_panel.play_next()
         else:
             return self.focus.keypress(size, key)
+
+    def expand(self, obj):
+        if type(obj) == Song:
+            # TODO: Expand Song (probably just album?)
+            pass
+        elif type(obj) == Album:
+            album_info = self.g_api.get_album_info(obj.id)
+
+            songs = []
+            for track in album_info['tracks']:
+                song = Song.from_dict(track)
+                songs.append(song)
+            self.search_panel.set_search_results((songs, [], []))
+        else:  # Artist
+            # TODO: Expand Artist (top songs/albums etc)
+            pass
 
     def search(self, query):
 
@@ -369,24 +427,20 @@ class App(urwid.Pile):
 
         songs = []
         for hit in results['song_hits']:
-            title = hit['track']['title']
-            album = hit['track']['album']
-            artist = hit['track']['artist']
-            try:
-                id_ = hit['track']['id']
-            except KeyError:
-                id_ = hit['track']['storeId']
-            songs.append(Song(title, album, artist, id_))
+            song = Song.from_dict(hit['track'])
+            songs.append(song)
 
         albums = []
         for hit in results['album_hits']:
-            title = hit['album']['name']
-            artist = hit['album']['albumArtist']
-            year = hit['album']['year']
-            id_ = hit['album']['albumId']
-            albums.append(Album(title, artist, year, id_))
+            album = Album.from_dict(hit['album'])
+            albums.append(album)
 
-        self.search_panel.set_search_results((songs, albums, []))
+        artists = []
+        for hit in results['artist_hits']:
+            artist = Artist.from_dict(hit['artist'])
+            albums.append(artist)
+
+        self.search_panel.set_search_results((songs, albums, artists))
         self.set_focus(self.search_panel_wrapped)
 
     def cleanup(self):
@@ -395,28 +449,16 @@ class App(urwid.Pile):
         self.g_api.logout()
 
 
-def handle_sigint(signum, frame):
-    raise urwid.ExitMainLoop()
-
-
 if __name__ == '__main__':
     app = App()
+
+    import signal
+
+    def handle_sigint(signum, frame):
+        raise urwid.ExitMainLoop()
     signal.signal(signal.SIGINT, handle_sigint)
 
-    # def show_or_exit(key):
-    #     if key == 'esc':
-    #         raise urwid.ExitMainLoop()
-    #     elif key == 'enter':
-    #         app.now_playing.set_text('got an enter!')
-    #     else:
-    #         app.now_playing.set_text(repr(app.search_panel.get_focus()))
-    # loop = urwid.MainLoop(app, app.palette, unhandled_input=show_or_exit)
-    loop = urwid.MainLoop(app, app.palette)
-    try:
-        app.loop = loop
-        loop.run()
-        app.cleanup()
-    except Exception as e:
-        print(log)
-        app.cleanup()
-        raise e
+    loop = urwid.MainLoop(app, app.palette, pop_ups=True)
+    app.loop = loop
+    loop.run()
+    app.cleanup()
