@@ -6,7 +6,7 @@ listening to music for Google Play Music All-Access subscribers.
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=WIkk7PLCTb4
 " target="_blank"><img src="http://img.youtube.com/vi/WIkk7PLCTb4/0.jpg" 
-alt="Demonstration" width="240" height="180" border="10" /></a>
+alt="Demonstration" width="700" border="10" /></a>
 
 # Dependencies
 * [Python >= 3.6](https://www.python.org/downloads)
