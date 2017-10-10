@@ -3,6 +3,15 @@ import urwid
 import gmusicapi
 
 
+def sec_to_min_sec(sec_tot):
+    if sec_tot is None:
+        return 0, 0
+    else:
+        min_ = int(sec_tot // 60)
+        sec = int(sec_tot % 60)
+        return min_, sec
+
+
 class MusicObject:
     @staticmethod
     def to_ui(*txts):
@@ -22,13 +31,14 @@ class MusicObject:
 
 
 class Song(MusicObject):
-    def __init__(self, title, album, albumId, artist, artistId, id_):
+    def __init__(self, title, album, albumId, artist, artistId, id_, length):
         self.title = title
         self.album = album
         self.albumId = albumId
         self.artist = artist
         self.artistId = artistId
         self.id = id_
+        self.length = length
 
     def __repr__(self):
         return f'<Song title:{self.title}, album:{self.album}, artist:{self.artist}>'
@@ -37,24 +47,29 @@ class Song(MusicObject):
         return f'{self.title} by {self.artist}'
 
     def ui(self):
-        return self.to_ui(self.title, self.album, self.artist)
+        return self.to_ui(self.title, self.album, self.artist,
+                          '{:02d}:{:02d}'.format(*self.length))
 
     @staticmethod
     def header():
-        return MusicObject.header_ui('Title', 'Album', 'Artist')
+        return MusicObject.header_ui('Title', 'Album', 'Artist', 'Length')
 
     @staticmethod
     def from_dict(d):
-        title = d['title']
-        album = d['album']
-        albumId = d['albumId']
-        artist = d['artist']
-        artistId = d['artistId'][0]
         try:
-            id_ = d['id']
-        except KeyError:
-            id_ = d['storeId']
-        return Song(title, album, albumId, artist, artistId, id_)
+            title = d['title']
+            album = d['album']
+            albumId = d['albumId']
+            artist = d['artist']
+            artistId = d['artistId'][0]
+            try:
+                id_ = d['id']
+            except KeyError:
+                id_ = d['storeId']
+            length = sec_to_min_sec(int(d['durationMillis']) / 1000)
+            return Song(title, album, albumId, artist, artistId, id_, length)
+        except KeyError as e:
+            raise ValueError(f"Missing Key {e} in dict \n{d}")
 
 
 class Album(MusicObject):
@@ -77,12 +92,18 @@ class Album(MusicObject):
 
     @staticmethod
     def from_dict(d):
-        title = d['name']
-        artist = d['albumArtist']
-        artistId = d['artistId'][0]
-        year = d['year']
-        id_ = d['albumId']
-        return Album(title, artist, artistId, year, id_)
+        try:
+            title = d['name']
+            artist = d['albumArtist']
+            artistId = d['artistId'][0]
+            try:
+                year = d['year']
+            except KeyError:
+                year = ''
+            id_ = d['albumId']
+            return Album(title, artist, artistId, year, id_)
+        except KeyError as e:
+            raise ValueError(f"Missing Key {e} in dict \n{d}")
 
 
 class Artist(MusicObject):
@@ -102,9 +123,12 @@ class Artist(MusicObject):
 
     @staticmethod
     def from_dict(d):
-        name = d['name']
-        id_ = d['artistId']
-        return Artist(name, id_)
+        try:
+            name = d['name']
+            id_ = d['artistId']
+            return Artist(name, id_)
+        except KeyError as e:
+            raise ValueError(f"Missing Key {e} in dict \n{d}")
 
 
 class CommandInput(urwid.Edit):
@@ -223,6 +247,8 @@ class QueuePanel(urwid.ListBox):
         if self.walker:
             self.walker.pop(0)
             self.app.play(self.queue.pop(0))
+        else:
+            self.app.stop()
 
     def keypress(self, size, key):
         focus_id = self.walker.get_focus()[1]
@@ -316,21 +342,12 @@ class App(urwid.Pile):
             self.password = config['password']
             self.device_id = config['device_id']
 
-    @staticmethod
-    def sec_to_min_sec(sec_tot):
-        if sec_tot is None:
-            return 0, 0
-        else:
-            min_ = int(sec_tot // 60)
-            sec = int(sec_tot % 60)
-            return min_, sec
-
     def update_progress(self):
         curr_time_s = self.player.time_pos
         rem_time_s = self.player.time_remaining
         if curr_time_s is not None and rem_time_s is not None:
-            curr_time = self.sec_to_min_sec(curr_time_s)
-            total_time = self.sec_to_min_sec(curr_time_s+rem_time_s)
+            curr_time = sec_to_min_sec(curr_time_s)
+            total_time = sec_to_min_sec(curr_time_s+rem_time_s)
         else:
             curr_time = (0, 0)
             total_time = (0, 0)
@@ -345,6 +362,7 @@ class App(urwid.Pile):
             self.update_progress()
             self.now_playing.set_text(f'Paused: {str(self.current_song)}')
         else:
+            self.update_progress()
             self.now_playing.set_text('')
 
     def refresh(self, *args, **kwargs):
@@ -363,9 +381,9 @@ class App(urwid.Pile):
         self.update_now_playing()
         self.schedule_refresh()
 
-    def stop(self, song):
+    def stop(self):
         self.current_song = None
-        self.player.quit()
+        # self.player.quit()
         self.play_state = 'stop'
         self.update_now_playing()
 
@@ -385,6 +403,8 @@ class App(urwid.Pile):
             self.play_state = 'play'
             self.update_now_playing()
             self.schedule_refresh()
+        elif self.play_state == 'stop':
+            self.queue_panel.play_next()
 
     def keypress(self, size, key):
         if key == 'tab':
