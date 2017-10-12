@@ -40,7 +40,8 @@ the config file.
   - `<` seek backwards 10 seconds
   - `tab`/`shift-tab` cycle focus through search/queue/input windows
   - In search window, 
-    - `q` add selected song/album to queue
+    - `q` Add selected song/album to queue
+    - `r` Create radio station around selected song/album/artist and add 50 songs from it to queue
     - `e` view information about selected song/album/artist
     - `backspace` go back in search/expand history
   - In queue window,
