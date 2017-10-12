@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import urwid
 import gmusicapi
+import logging
 
 
 def sec_to_min_sec(sec_tot):
@@ -69,7 +70,8 @@ class Song(MusicObject):
             length = sec_to_min_sec(int(d['durationMillis']) / 1000)
             return Song(title, album, albumId, artist, artistId, id_, length)
         except KeyError as e:
-            raise ValueError(f"Missing Key {e} in dict \n{d}")
+            logging.exception(f"Missing Key {e} in dict \n{d}")
+            return None
 
 
 class Album(MusicObject):
@@ -103,7 +105,8 @@ class Album(MusicObject):
             id_ = d['albumId']
             return Album(title, artist, artistId, year, id_)
         except KeyError as e:
-            raise ValueError(f"Missing Key {e} in dict \n{d}")
+            logging.exception(f"Missing Key {e} in dict \n{d}")
+            return None
 
 
 class Artist(MusicObject):
@@ -128,7 +131,8 @@ class Artist(MusicObject):
             id_ = d['artistId']
             return Artist(name, id_)
         except KeyError as e:
-            raise ValueError(f"Missing Key {e} in dict \n{d}")
+            logging.exception(f"Missing Key {e} in dict \n{d}")
+            return None
 
 
 class CommandInput(urwid.Edit):
@@ -165,9 +169,13 @@ class SearchPanel(urwid.ListBox):
                 elif type(selected) == Album:
                     self.app.queue_panel.add_album_to_queue(selected)
         elif key == 'e':
-            self.app.expand(self.selected_search_obj())
+            if self.selected_search_obj() is not None:
+                self.app.expand(self.selected_search_obj())
         elif key == 'backspace':
             self.back()
+        elif key == 'r':
+            if self.selected_search_obj() is not None:
+                self.app.create_radio_station(self.selected_search_obj())
         elif key == 'j':
             super().keypress(size, 'down')
         elif key == 'k':
@@ -184,6 +192,9 @@ class SearchPanel(urwid.ListBox):
         self.set_search_results(songs, albums, artists)
 
     def set_search_results(self, songs, albums, artists):
+        songs = [obj for obj in songs if obj is not None]
+        albums = [obj for obj in albums if obj is not None]
+        artists = [obj for obj in artists if obj is not None]
         self.search_results = (songs, albums, artists)
 
         self.walker.clear()
@@ -219,7 +230,7 @@ class SearchPanel(urwid.ListBox):
                 return albums[focus_id]
             focus_id -= (1 + len(albums))
             return songs[focus_id]
-        except IndexError:
+        except (IndexError, TypeError):
             return None
 
 
@@ -231,16 +242,18 @@ class QueuePanel(urwid.ListBox):
         super().__init__(self.walker)
 
     def add_song_to_queue(self, song):
-        self.queue.append(song)
-        self.walker.append(song.ui())
+        if song:
+            self.queue.append(song)
+            self.walker.append(song.ui())
 
     def add_album_to_queue(self, album):
         album_info = self.app.g_api.get_album_info(album.id)
 
         for track in album_info['tracks']:
             song = Song.from_dict(track)
-            self.queue.append(song)
-            self.walker.append(song.ui())
+            if song:
+                self.queue.append(song)
+                self.walker.append(song.ui())
 
     def drop(self, idx):
         if 0 <= idx < len(self.queue):
@@ -480,6 +493,20 @@ class App(urwid.Pile):
         self.search_panel.update_search_results(songs, albums, artists)
         self.set_focus(self.search_panel_wrapped)
 
+    def create_radio_station(self, obj):
+        if type(obj) == Song:
+            station_name = obj.title + " radio"
+            station_id = self.g_api.create_station(station_name, track_id=obj.id)
+        elif type(obj) == Album:
+            station_name = obj.title + " radio"
+            station_id = self.g_api.create_station(station_name, album_id=obj.id)
+        else:  # Artist
+            station_name = obj.name + " radio"
+            station_id = self.g_api.create_station(station_name, artist_id=obj.id)
+        song_dicts = self.g_api.get_station_tracks(station_id, num_tracks=50)
+        for song_dict in song_dicts:
+            self.queue_panel.add_song_to_queue(Song.from_dict(song_dict))
+
     def cleanup(self):
         self.player.quit()
         del self.player
@@ -487,6 +514,7 @@ class App(urwid.Pile):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(filename='tuijam.log', level=logging.INFO)
     app = App()
 
     import signal
@@ -497,5 +525,9 @@ if __name__ == '__main__':
 
     loop = urwid.MainLoop(app, app.palette)
     app.loop = loop
-    loop.run()
+    try:
+        loop.run()
+    except Exception as e:
+        logging.exception(e)
+        print("Errors encountered! :( see tuijam.log for more information")
     app.cleanup()
