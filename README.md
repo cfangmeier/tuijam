@@ -42,6 +42,7 @@ the config file.
   - In search window, 
     - `q` add selected song/album to queue
     - `e` view information about selected song/album/artist
+    - `backspace` go back in search/expand history
   - In queue window,
     - `u` move selected song up in queue
     - `d` move selected song down in queue

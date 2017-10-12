@@ -152,6 +152,8 @@ class SearchPanel(urwid.ListBox):
     def __init__(self, app):
         self.app = app
         self.walker = urwid.SimpleFocusListWalker([])
+        self.history = []
+        self.search_results = ([], [], [])
         super().__init__(self.walker)
 
     def keypress(self, size, key):
@@ -164,12 +166,22 @@ class SearchPanel(urwid.ListBox):
                     self.app.queue_panel.add_album_to_queue(selected)
         elif key == 'e':
             self.app.expand(self.selected_search_obj())
+        elif key == 'backspace':
+            self.back()
         elif key == 'j':
             super().keypress(size, 'down')
         elif key == 'k':
             super().keypress(size, 'up')
         else:
             super().keypress(size, key)
+
+    def back(self):
+        if self.history:
+            self.set_search_results(*self.history.pop())
+
+    def update_search_results(self, songs, albums, artists):
+        self.history.append(self.search_results)
+        self.set_search_results(songs, albums, artists)
 
     def set_search_results(self, songs, albums, artists):
         self.search_results = (songs, albums, artists)
@@ -456,7 +468,7 @@ class App(urwid.Pile):
             albums = [Album.from_dict(album) for album in artist_info['albums']]
             artists = [Artist.from_dict(artist) for artist in artist_info['related_artists']]
             artists.insert(0, obj)
-        self.search_panel.set_search_results(songs, albums, artists)
+        self.search_panel.update_search_results(songs, albums, artists)
 
     def search(self, query):
         results = self.g_api.search(query)
@@ -465,7 +477,7 @@ class App(urwid.Pile):
         albums = [Album.from_dict(hit['album']) for hit in results['album_hits']]
         artists = [Artist.from_dict(hit['artist']) for hit in results['artist_hits']]
 
-        self.search_panel.set_search_results(songs, albums, artists)
+        self.search_panel.update_search_results(songs, albums, artists)
         self.set_focus(self.search_panel_wrapped)
 
     def cleanup(self):
