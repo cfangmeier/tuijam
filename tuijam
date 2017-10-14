@@ -135,7 +135,7 @@ class Artist(MusicObject):
             return None
 
 
-class CommandInput(urwid.Edit):
+class SearchInput(urwid.Edit):
     def __init__(self, app):
         self.app = app
         super().__init__('search > ', multiline=False, allow_tab=False)
@@ -344,15 +344,15 @@ class App(urwid.Pile):
         queue_panel_wrapped = urwid.AttrMap(queue_panel_wrapped, 'region_bg normal', 'region_bg select')
         self.queue_panel_wrapped = queue_panel_wrapped
 
-        self.command_input = urwid.Edit('> ', multiline=False)
-        self.command_input = CommandInput(self)
+        self.search_input = urwid.Edit('> ', multiline=False)
+        self.search_input = SearchInput(self)
 
         urwid.Pile.__init__(self, [('weight', 12, search_panel_wrapped),
                                    ('pack', status_line),
                                    ('weight', 7, queue_panel_wrapped),
-                                   ('pack', self.command_input)
+                                   ('pack', self.search_input)
                                    ])
-        self.set_focus(self.command_input)
+        self.set_focus(self.search_input)
 
         self.play_state = 'stop'
         self.current_song = None
@@ -431,19 +431,30 @@ class App(urwid.Pile):
         elif self.play_state == 'stop':
             self.queue_panel.play_next()
 
+
+    def volume_down(self):
+        current = self.player.volume
+        if current >= 10:
+            self.player.volume -= 10
+
+    def volume_up(self):
+        current = self.player.volume
+        if current <= 90:
+            self.player.volume += 10
+
     def keypress(self, size, key):
         if key == 'tab':
             current_focus = self.focus
             if current_focus == self.search_panel_wrapped:
                 self.set_focus(self.queue_panel_wrapped)
             elif current_focus == self.queue_panel_wrapped:
-                self.set_focus(self.command_input)
+                self.set_focus(self.search_input)
             else:
                 self.set_focus(self.search_panel_wrapped)
         elif key == 'shift tab':
             current_focus = self.focus
             if current_focus == self.search_panel_wrapped:
-                self.set_focus(self.command_input)
+                self.set_focus(self.search_input)
             elif current_focus == self.queue_panel_wrapped:
                 self.set_focus(self.search_panel_wrapped)
             else:
@@ -458,6 +469,10 @@ class App(urwid.Pile):
             self.seek(-10)
         elif key == 'ctrl n':
             self.queue_panel.play_next()
+        elif key in '-_':
+            self.volume_down()
+        elif key in '+=':
+            self.volume_up()
         else:
             return self.focus.keypress(size, key)
 
@@ -529,5 +544,5 @@ if __name__ == '__main__':
         loop.run()
     except Exception as e:
         logging.exception(e)
-        print("Errors encountered! :( see tuijam.log for more information")
+        print("Something bad happened! :( see tuijam.log for more information.")
     app.cleanup()

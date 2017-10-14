@@ -38,6 +38,8 @@ the config file.
   - `ctrl-n` move to next song
   - `>` seek forward 10 seconds
   - `<` seek backwards 10 seconds
+  - `+` volume up
+  - `-` volume down
   - `tab`/`shift-tab` cycle focus through search/queue/input windows
   - In search window, 
     - `q` Add selected song/album to queue
