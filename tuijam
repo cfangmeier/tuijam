@@ -13,6 +13,27 @@ def sec_to_min_sec(sec_tot):
         return min_, sec
 
 
+# class ScrollingText(urwid.Text):
+#     def __init__(self, text, *args, **kwargs):
+#         self.full_text = text
+#         self.tick_counter = 0
+#         super().__init__(text, *args, **kwargs)
+
+#     def update_text(self, text):
+#         self.full_text = text
+#         self.tick_counter = 0
+#         self.tick()
+
+#     def tick(self):
+#         cols, _ = self.pack()
+#         if cols < len(self.full_text):
+#             txt_slice = self.full_text[self.tick_counter:self.tick_counter+cols]
+#             logging.critical(f"{cols}, {self.full_text}, {txt_slice}")
+#             super().set_text(txt_slice)
+#             self.tick_counter += 1
+#             self.tick_counter %= cols - len(self.full_text)
+
+
 class MusicObject:
     @staticmethod
     def to_ui(*txts):
@@ -222,13 +243,17 @@ class SearchPanel(urwid.ListBox):
         songs, albums, artists = self.search_results
 
         try:
+            if artists:
+                focus_id -= 1
+                if focus_id < len(artists):
+                    return artists[focus_id]
+                focus_id -= len(artists)
+            if albums:
+                focus_id -= 1
+                if focus_id < len(albums):
+                    return albums[focus_id]
+                focus_id -= len(albums)
             focus_id -= 1
-            if focus_id < len(artists):
-                return artists[focus_id]
-            focus_id -= (1 + len(artists))
-            if focus_id < len(albums):
-                return albums[focus_id]
-            focus_id -= (1 + len(albums))
             return songs[focus_id]
         except (IndexError, TypeError):
             return None
@@ -275,6 +300,13 @@ class QueuePanel(urwid.ListBox):
         else:
             self.app.stop()
 
+    def selected_queue_obj(self):
+        try:
+            focus_id = self.walker.get_focus()[1]
+            return self.queue[focus_id]
+        except (IndexError, TypeError):
+            return None
+
     def keypress(self, size, key):
         focus_id = self.walker.get_focus()[1]
         if focus_id is None:
@@ -292,6 +324,8 @@ class QueuePanel(urwid.ListBox):
             super().keypress(size, 'down')
         elif key == 'k':
             super().keypress(size, 'up')
+        elif key == 'e':
+            self.app.expand(self.selected_queue_obj())
         elif key == ' ':
             if self.app.play_state == 'stop':
                 self.play_next()
@@ -318,7 +352,7 @@ class App(urwid.Pile):
 
         self.read_config()
 
-        self.g_api = gmusicapi.Mobileclient()
+        self.g_api = gmusicapi.Mobileclient(debug_logging=False)
         self.g_api.login(self.email, self.password, self.device_id)
 
         import mpv
@@ -356,6 +390,7 @@ class App(urwid.Pile):
 
         self.play_state = 'stop'
         self.current_song = None
+        self.history = []
 
     def read_config(self):
         from os.path import join, expanduser
@@ -387,7 +422,7 @@ class App(urwid.Pile):
             self.update_progress()
             self.now_playing.set_text(f'Paused: {str(self.current_song)}')
         else:
-            self.update_progress()
+            self.progress.set_text('00:00')
             self.now_playing.set_text('')
 
     def refresh(self, *args, **kwargs):
@@ -395,7 +430,7 @@ class App(urwid.Pile):
             self.queue_panel.play_next()
         self.update_now_playing()
 
-    def schedule_refresh(self, dt=0.2):
+    def schedule_refresh(self, dt=0.5):
         self.loop.set_alarm_in(dt, self.refresh)
 
     def play(self, song):
@@ -404,11 +439,12 @@ class App(urwid.Pile):
         self.player.play(url)
         self.play_state = 'play'
         self.update_now_playing()
+        self.history.append(song)
         self.schedule_refresh()
 
     def stop(self):
         self.current_song = None
-        # self.player.quit()
+        self.player.pause = True
         self.play_state = 'stop'
         self.update_now_playing()
 
@@ -430,7 +466,6 @@ class App(urwid.Pile):
             self.schedule_refresh()
         elif self.play_state == 'stop':
             self.queue_panel.play_next()
-
 
     def volume_down(self):
         current = self.player.volume
@@ -469,6 +504,8 @@ class App(urwid.Pile):
             self.seek(-10)
         elif key == 'ctrl n':
             self.queue_panel.play_next()
+        elif key == 'ctrl r':
+            self.search_panel.update_search_results(self.history, [], [])
         elif key in '-_':
             self.volume_down()
         elif key in '+=':
@@ -477,6 +514,9 @@ class App(urwid.Pile):
             return self.focus.keypress(size, key)
 
     def expand(self, obj):
+        if obj is None:
+            return
+
         if type(obj) == Song:
             album_info = self.g_api.get_album_info(obj.albumId)
 
@@ -529,7 +569,7 @@ class App(urwid.Pile):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='tuijam.log', level=logging.INFO)
+    logging.basicConfig(filename='tuijam.log', level=logging.ERROR)
     app = App()
 
     import signal
