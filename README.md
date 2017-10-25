@@ -14,7 +14,7 @@ alt="Demonstration" width="700" border="10" /></a>
 
 # Installation
 ```bash
-git clone git@github.com:cfangmeier/tuijam.git`
+git clone git@github.com:cfangmeier/tuijam.git
 cd tuijam
 python setup.py install --user
 ```
