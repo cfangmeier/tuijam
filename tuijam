@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from os.path import join, expanduser
+
 import urwid
 import gmusicapi
 import logging
@@ -393,7 +395,6 @@ class App(urwid.Pile):
         self.history = []
 
     def read_config(self):
-        from os.path import join, expanduser
         import yaml
         config_file = join(expanduser('~'), '.config', 'tuijam', 'config.yaml')
         with open(config_file) as f:
@@ -569,7 +570,8 @@ class App(urwid.Pile):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='tuijam.log', level=logging.ERROR)
+    log_file = join(expanduser('~'), '.config', 'tuijam', 'log.txt')
+    logging.basicConfig(filename=log_file, level=logging.ERROR)
     app = App()
 
     import signal
@@ -584,5 +586,5 @@ if __name__ == '__main__':
         loop.run()
     except Exception as e:
         logging.exception(e)
-        print("Something bad happened! :( see tuijam.log for more information.")
+        print("Something bad happened! :( see log file ($HOME/.config/tuijam/) for more information.")
     app.cleanup()
