@@ -518,7 +518,7 @@ class App(urwid.Pile):
             self.queue_panel.play_next()
         elif key == 'ctrl r':
             self.search_panel.update_search_results(self.history, [], [])
-        elif key == 'ctrl v':
+        elif key == 'ctrl s':
             self.queue_panel.shuffle()
         elif key in '-_':
             self.volume_down()
