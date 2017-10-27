@@ -287,6 +287,10 @@ class QueuePanel(urwid.ListBox):
             self.queue.pop(idx)
             self.walker.pop(idx)
 
+    def clear(self, idx):
+        self.queue.clear()
+        self.walker.clear()
+
     def swap(self, idx1, idx2):
         if (0 <= idx1 < len(self.queue)) and (0 <= idx2 < len(self.queue)):
             obj1, obj2 = self.queue[idx1], self.queue[idx2]
@@ -294,6 +298,13 @@ class QueuePanel(urwid.ListBox):
 
             ui1, ui2 = self.walker[idx1], self.walker[idx2]
             self.walker[idx1], self.walker[idx2] = ui2, ui1
+
+    def shuffle(self):
+        from random import shuffle as rshuffle
+        rshuffle(self.queue)
+        self.walker.clear()
+        for s in self.queue:
+            self.walker.append(s.ui())
 
     def play_next(self):
         if self.walker:
@@ -507,6 +518,8 @@ class App(urwid.Pile):
             self.queue_panel.play_next()
         elif key == 'ctrl r':
             self.search_panel.update_search_results(self.history, [], [])
+        elif key == 'ctrl v':
+            self.queue_panel.shuffle()
         elif key in '-_':
             self.volume_down()
         elif key in '+=':
