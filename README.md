@@ -35,7 +35,7 @@ the config file.
   - `ctrl-p` toggle play/pause
   - `ctrl-n` move to next song
   - `ctrl-r` view recently played songs
-  - `ctrl-v` shuffle queued songs
+  - `ctrl-s` shuffle queued songs (Note: If this hangs, try running `stty -ixon` in your terminal and restarting `tuijam`)
   - `>` seek forward 10 seconds
   - `<` seek backwards 10 seconds
   - `+` volume up
