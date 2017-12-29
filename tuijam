@@ -55,13 +55,14 @@ class MusicObject:
 
 
 class Song(MusicObject):
-    def __init__(self, title, album, albumId, artist, artistId, id_, length):
+    def __init__(self, title, album, albumId, artist, artistId, id_, type_, length):
         self.title = title
         self.album = album
         self.albumId = albumId
         self.artist = artist
         self.artistId = artistId
         self.id = id_
+        self.type = type_
         self.length = length
 
     def __repr__(self):
@@ -88,10 +89,12 @@ class Song(MusicObject):
             artistId = d['artistId'][0]
             try:
                 id_ = d['id']
+                type_ = 'library'
             except KeyError:
                 id_ = d['storeId']
+                type_ = 'store'
             length = sec_to_min_sec(int(d['durationMillis']) / 1000)
-            return Song(title, album, albumId, artist, artistId, id_, length)
+            return Song(title, album, albumId, artist, artistId, id_, type_, length)
         except KeyError as e:
             logging.exception(f"Missing Key {e} in dict \n{d}")
             return None
@@ -449,6 +452,7 @@ class App(urwid.Pile):
         self.current_song = song
         url = self.g_api.get_stream_url(song.id)
         self.player.play(url)
+        self.player.pause = False
         self.play_state = 'play'
         self.update_now_playing()
         self.history.append(song)
