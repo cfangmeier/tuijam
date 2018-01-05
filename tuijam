@@ -14,6 +14,97 @@ def sec_to_min_sec(sec_tot):
         sec = int(sec_tot % 60)
         return min_, sec
 
+
+class PlayBar(urwid.ProgressBar):
+    # Stolen from: https://github.com/and3rson/clay/blob/master/clay/playbar.py
+    def __init__(self, app, *args, **kwargs):
+        super(PlayBar, self).__init__(*args, **kwargs)
+        self.app = app
+
+    def get_prog_tot(self):
+        curr_time_s = self.app.player.time_pos
+        rem_time_s = self.app.player.time_remaining
+        if curr_time_s is None or rem_time_s is None:
+            return 0, 0
+        else:
+            progress = int(curr_time_s)
+            total = int(curr_time_s + rem_time_s)
+            return progress, total
+
+    def get_text(self):
+        if self.app.current_song is None:
+            return u'Idle'
+        progress, total = self.get_prog_tot()
+        # return [u' \u25B6 ' if self.app.play_state == 'play' else u' \u25A0 ',
+        #         ('np_artist', self.app.current_song.artist),
+        #         ' - ',
+        #         ('np_song', self.app.current_song.title),
+        #         '  [{:02d}:{:02d} / {:02d}:{:02d}]'.format(progress // 60,
+        #                                                    progress % 60,
+        #                                                    total // 60,
+        #                                                    total % 60)
+        #         ]
+        return u' {} {} - {} [{:02d}:{:02d} / {:02d}:{:02d}]'.format(
+            u'\u25B6' if self.app.play_state == 'play' else u'\u25A0',
+            self.app.current_song.artist,
+            self.app.current_song.title,
+            progress // 60,
+            progress % 60,
+            total // 60,
+            total % 60,
+        )
+
+    def update(self):
+        self._invalidate()
+
+        progress, total = self.get_prog_tot()
+        if progress >= 0 and total > 0:
+            percent = progress / total * 100
+            self.set_completion(percent)
+        else:
+            self.set_completion(0)
+
+    def render(self, size, focus=False):
+        """
+        Render the progress bar - fixed implementation.
+        For details see https://github.com/urwid/urwid/pull/261
+        """
+        (maxcol,) = size
+        txt = urwid.Text(self.get_text(), self.text_align, urwid.widget.CLIP)
+        c = txt.render((maxcol,))
+
+        cf = float(self.current) * maxcol / self.done
+        ccol_dirty = int(cf)
+        ccol = len(c._text[0][:ccol_dirty].decode(
+            'utf-8', 'ignore'
+        ).encode(
+            'utf-8'
+        ))
+        cs = 0
+        if self.satt is not None:
+            cs = int((cf - ccol) * 8)
+        if ccol < 0 or (ccol == 0 and cs == 0):
+            c._attr = [[(self.normal, maxcol)]]
+        elif ccol >= maxcol:
+            c._attr = [[(self.complete, maxcol)]]
+        elif cs and c._text[0][ccol] == " ":
+            t = c._text[0]
+            cenc = self.eighths[cs].encode("utf-8")
+            c._text[0] = t[:ccol] + cenc + t[ccol + 1:]
+            a = []
+            if ccol > 0:
+                a.append((self.complete, ccol))
+            a.append((self.satt, len(cenc)))
+            if maxcol - ccol - 1 > 0:
+                a.append((self.normal, maxcol - ccol - 1))
+            c._attr = [a]
+            c._cs = [[(None, len(c._text[0]))]]
+        else:
+            c._attr = [[(self.complete, ccol),
+                        (self.normal, maxcol - ccol)]]
+        return c
+
+
 class MusicObject:
     @staticmethod
     def to_ui(*txts):
@@ -339,16 +430,13 @@ class App(urwid.Pile):
         ('header_bg', 'white', 'black'),
         ('line', 'white', ''),
         ('search normal', 'white', ''),
-        ('search select', 'white', 'dark red'),
+        ('search select', '', '', '', 'white', '#D32'),
 
         ('region_bg normal', '', ''),
         ('region_bg select', '', 'black'),
 
-        ('np_play', '', '', '', '#0F0', ''),
-        ('np_pause', '', '', '', '#F00', ''),
-
-        ('np_song', '', '', '', '#AAA,bold', ''),
-        ('np_artist', '', '', '', '#FFF,bold', ''),
+        ('progress', '', '', '', '#FFF', '#F54'),
+        ('progress_remaining', '', '', '', '#FFF', '#444'),
     ]
 
     def __init__(self):
@@ -371,10 +459,11 @@ class App(urwid.Pile):
         search_panel_wrapped = urwid.AttrMap(search_panel_wrapped, 'region_bg normal', 'region_bg select')
         self.search_panel_wrapped = search_panel_wrapped
 
-        self.now_playing = urwid.Text('')
-        self.progress = urwid.Text('0:00/0:00', align='right')
-        status_line = urwid.Columns([('weight', 3, self.now_playing),
-                                     ('weight', 1, self.progress)])
+        self.playbar = PlayBar(self, 'progress_remaining', 'progress', current=0, done=100)
+        # self.now_playing = urwid.Text('')
+        # self.progress = urwid.Text('0:00/0:00', align='right')
+        # status_line = urwid.Columns([('weight', 3, self.now_playing),
+        #                              ('weight', 1, self.progress)])
 
         self.queue_panel = QueuePanel(self)
         queue_panel_wrapped = urwid.LineBox(self.queue_panel, title='Queue')
@@ -385,7 +474,7 @@ class App(urwid.Pile):
         self.search_input = SearchInput(self)
 
         urwid.Pile.__init__(self, [('weight', 12, search_panel_wrapped),
-                                   ('pack', status_line),
+                                   ('pack', self.playbar),
                                    ('weight', 7, queue_panel_wrapped),
                                    ('pack', self.search_input)
                                    ])
@@ -404,33 +493,13 @@ class App(urwid.Pile):
             self.password = config['password']
             self.device_id = config['device_id']
 
-    def update_progress(self):
-        curr_time_s = self.player.time_pos
-        rem_time_s = self.player.time_remaining
-        if curr_time_s is not None and rem_time_s is not None:
-            curr_time = sec_to_min_sec(curr_time_s)
-            total_time = sec_to_min_sec(curr_time_s+rem_time_s)
-        else:
-            curr_time = (0, 0)
-            total_time = (0, 0)
-        self.progress.set_text(f'{curr_time[0]}:{curr_time[1]:02d}/{total_time[0]}:{total_time[1]:02d}')
-
-    def update_now_playing(self):
-        if self.play_state == 'play':
-            self.update_progress()
-            self.now_playing.set_text([('np_play', '  ► '), *self.current_song.fmt_str()])
-            self.schedule_refresh()
-        elif self.play_state == 'pause':
-            self.update_progress()
-            self.now_playing.set_text([('np_pause', '  ■ '), *self.current_song.fmt_str()])
-        else:
-            self.progress.set_text('00:00')
-            self.now_playing.set_text('')
-
     def refresh(self, *args, **kwargs):
         if self.play_state == 'play' and self.player.eof_reached:
             self.queue_panel.play_next()
-        self.update_now_playing()
+        self.playbar.update()
+        self.loop.draw_screen()
+        if self.play_state == 'play':
+            self.schedule_refresh()
 
     def schedule_refresh(self, dt=0.5):
         self.loop.set_alarm_in(dt, self.refresh)
@@ -441,7 +510,7 @@ class App(urwid.Pile):
         self.player.play(url)
         self.player.pause = False
         self.play_state = 'play'
-        self.update_now_playing()
+        self.playbar.update()
         self.history.append(song)
         self.schedule_refresh()
 
@@ -449,7 +518,7 @@ class App(urwid.Pile):
         self.current_song = None
         self.player.pause = True
         self.play_state = 'stop'
-        self.update_now_playing()
+        self.playbar.update()
 
     def seek(self, dt):
         try:
@@ -461,11 +530,11 @@ class App(urwid.Pile):
         if self.play_state == 'play':
             self.player.pause = True
             self.play_state = 'pause'
-            self.update_now_playing()
+            self.playbar.update()
         elif self.play_state == 'pause':
             self.player.pause = False
             self.play_state = 'play'
-            self.update_now_playing()
+            self.playbar.update()
             self.schedule_refresh()
         elif self.play_state == 'stop':
             self.queue_panel.play_next()
