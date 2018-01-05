@@ -49,6 +49,9 @@ class Song(MusicObject):
     def __str__(self):
         return f'{self.title} by {self.artist}'
 
+    def fmt_str(self):
+        return [('np_song', f'{self.title} '), 'by ', ('np_artist', f'{self.artist}')]
+
     def ui(self):
         return self.to_ui(self.title, self.album, self.artist,
                           '{:02d}:{:02d}'.format(*self.length))
@@ -340,6 +343,12 @@ class App(urwid.Pile):
 
         ('region_bg normal', '', ''),
         ('region_bg select', '', 'black'),
+
+        ('np_play', '', '', '', '#0F0', ''),
+        ('np_pause', '', '', '', '#F00', ''),
+
+        ('np_song', '', '', '', '#AAA,bold', ''),
+        ('np_artist', '', '', '', '#FFF,bold', ''),
     ]
 
     def __init__(self):
@@ -409,11 +418,11 @@ class App(urwid.Pile):
     def update_now_playing(self):
         if self.play_state == 'play':
             self.update_progress()
-            self.now_playing.set_text(f'Now Playing: {str(self.current_song)}')
+            self.now_playing.set_text([('np_play', '  ► '), *self.current_song.fmt_str()])
             self.schedule_refresh()
         elif self.play_state == 'pause':
             self.update_progress()
-            self.now_playing.set_text(f'Paused: {str(self.current_song)}')
+            self.now_playing.set_text([('np_pause', '  ■ '), *self.current_song.fmt_str()])
         else:
             self.progress.set_text('00:00')
             self.now_playing.set_text('')
@@ -577,6 +586,7 @@ if __name__ == '__main__':
 
     loop = urwid.MainLoop(app, app.palette)
     app.loop = loop
+    loop.screen.set_terminal_properties(256)
     try:
         loop.run()
     except Exception as e:
