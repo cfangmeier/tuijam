@@ -14,28 +14,6 @@ def sec_to_min_sec(sec_tot):
         sec = int(sec_tot % 60)
         return min_, sec
 
-
-# class ScrollingText(urwid.Text):
-#     def __init__(self, text, *args, **kwargs):
-#         self.full_text = text
-#         self.tick_counter = 0
-#         super().__init__(text, *args, **kwargs)
-
-#     def update_text(self, text):
-#         self.full_text = text
-#         self.tick_counter = 0
-#         self.tick()
-
-#     def tick(self):
-#         cols, _ = self.pack()
-#         if cols < len(self.full_text):
-#             txt_slice = self.full_text[self.tick_counter:self.tick_counter+cols]
-#             logging.critical(f"{cols}, {self.full_text}, {txt_slice}")
-#             super().set_text(txt_slice)
-#             self.tick_counter += 1
-#             self.tick_counter %= cols - len(self.full_text)
-
-
 class MusicObject:
     @staticmethod
     def to_ui(*txts):
@@ -539,7 +517,7 @@ class App(urwid.Pile):
             album_info = self.g_api.get_album_info(obj.albumId)
 
             songs = [Song.from_dict(track) for track in album_info['tracks']]
-            albums = [obj]
+            albums = [Album.from_dict(album_info)]
             artists = [Artist(obj.artist, obj.artistId)]
         elif type(obj) == Album:
             album_info = self.g_api.get_album_info(obj.id)
@@ -551,7 +529,7 @@ class App(urwid.Pile):
             artist_info = self.g_api.get_artist_info(obj.id)
 
             songs = [Song.from_dict(track) for track in artist_info['topTracks']]
-            albums = [Album.from_dict(album) for album in artist_info['albums']]
+            albums = [Album.from_dict(album) for album in artist_info.get('albums', [])]
             artists = [Artist.from_dict(artist) for artist in artist_info['related_artists']]
             artists.insert(0, obj)
         self.search_panel.update_search_results(songs, albums, artists)
@@ -588,7 +566,7 @@ class App(urwid.Pile):
 
 if __name__ == '__main__':
     log_file = join(expanduser('~'), '.config', 'tuijam', 'log.txt')
-    logging.basicConfig(filename=log_file, level=logging.ERROR)
+    logging.basicConfig(filename=log_file, filemode='w', level=logging.ERROR)
     app = App()
 
     import signal
@@ -603,5 +581,5 @@ if __name__ == '__main__':
         loop.run()
     except Exception as e:
         logging.exception(e)
-        print("Something bad happened! :( see log file ($HOME/.config/tuijam/) for more information.")
+        print("Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) for more information.")
     app.cleanup()
