@@ -4,7 +4,7 @@ A fancy TUI client for Google Play Music.
 TUIJam seeks to make a simple, attractive, terminal-based interface to
 listening to music for Google Play Music All-Access subscribers.
 
-[![asciicast](https://asciinema.org/a/rXcb2Ga0RG9JYNWtYH6fDRvmx.png)](https://asciinema.org/a/rXcb2Ga0RG9JYNWtYH6fDRvmx)
+[![asciicast](https://asciinema.org/a/155875.png)](https://asciinema.org/a/155875)
 
 # Dependencies
 * [Python >= 3.6](https://www.python.org/downloads)
