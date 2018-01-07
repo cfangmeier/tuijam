@@ -26,7 +26,7 @@ device_id: yourdeviceid
 ```
 Note that if you have 2-factor setup on your Google account, you need to make
 an app-password for TUIJam. To find your device ID, first put your email and
-password in the config file, then run `gpymusic-get-dev-id`. If your login
+password in the config file, then run `tuijam-get-dev-id`. If your login
 works, you will get a list of acceptable device ids, place any one of them into
 the config file.
 
@@ -59,3 +59,5 @@ TUIJam was heavily inspired by the
 [gpymusic](https://github.com/christopher-dG/gpymusic) project, and, of course,
 could not exists without the great
 [gmusicapi](https://github.com/simon-weber/gmusicapi).
+
+This project is neither affiliated with nor endorsed by Google.
