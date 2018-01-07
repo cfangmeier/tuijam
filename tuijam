@@ -16,7 +16,9 @@ def sec_to_min_sec(sec_tot):
 
 
 class PlayBar(urwid.ProgressBar):
-    # Stolen from: https://github.com/and3rson/clay/blob/master/clay/playbar.py
+    # Class stolen from: https://github.com/and3rson/clay/blob/master/clay/playbar.py
+    vol_inds = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█']
+
     def __init__(self, app, *args, **kwargs):
         super(PlayBar, self).__init__(*args, **kwargs)
         self.app = app
@@ -33,7 +35,7 @@ class PlayBar(urwid.ProgressBar):
 
     def get_text(self):
         if self.app.current_song is None:
-            return u'Idle'
+            return 'Idle'
         progress, total = self.get_prog_tot()
         # return [u' \u25B6 ' if self.app.play_state == 'play' else u' \u25A0 ',
         #         ('np_artist', self.app.current_song.artist),
@@ -44,14 +46,15 @@ class PlayBar(urwid.ProgressBar):
         #                                                    total // 60,
         #                                                    total % 60)
         #         ]
-        return u' {} {} - {} [{:02d}:{:02d} / {:02d}:{:02d}]'.format(
-            u'\u25B6' if self.app.play_state == 'play' else u'\u25A0',
+        return ' {} {} - {} [{:02d}:{:02d} / {:02d}:{:02d}] {}'.format(
+            '▶' if self.app.play_state == 'play' else '■',
             self.app.current_song.artist,
             self.app.current_song.title,
             progress // 60,
             progress % 60,
             total // 60,
             total % 60,
+            self.vol_inds[int(self.app.player.volume * 8 / 101)]
         )
 
     def update(self):
@@ -543,11 +546,13 @@ class App(urwid.Pile):
         current = self.player.volume
         if current >= 10:
             self.player.volume -= 10
+            self.playbar.update()
 
     def volume_up(self):
         current = self.player.volume
         if current <= 90:
             self.player.volume += 10
+            self.playbar.update()
 
     def keypress(self, size, key):
         if key == 'tab':
