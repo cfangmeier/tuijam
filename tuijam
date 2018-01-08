@@ -17,7 +17,7 @@ def sec_to_min_sec(sec_tot):
 
 class PlayBar(urwid.ProgressBar):
     # Class stolen from: https://github.com/and3rson/clay/blob/master/clay/playbar.py
-    vol_inds = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█']
+    vol_inds = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█']
 
     def __init__(self, app, *args, **kwargs):
         super(PlayBar, self).__init__(*args, **kwargs)
@@ -54,7 +54,7 @@ class PlayBar(urwid.ProgressBar):
             progress % 60,
             total // 60,
             total % 60,
-            self.vol_inds[int(self.app.player.volume * 8 / 101)]
+            self.vol_inds[self.app.volume]
         )
 
     def update(self):
@@ -451,6 +451,8 @@ class App(urwid.Pile):
 
         import mpv
         self.player = mpv.MPV()
+        self.player.volume = 100
+        self.volume = 8
 
         @self.player.event_callback('end_file')
         def callback(event):
@@ -543,16 +545,14 @@ class App(urwid.Pile):
             self.queue_panel.play_next()
 
     def volume_down(self):
-        current = self.player.volume
-        if current >= 10:
-            self.player.volume -= 10
-            self.playbar.update()
+        self.volume = max([0, self.volume-1])
+        self.player.volume = int(self.volume * 100 / 8)
+        self.playbar.update()
 
     def volume_up(self):
-        current = self.player.volume
-        if current <= 90:
-            self.player.volume += 10
-            self.playbar.update()
+        self.volume = min([8, self.volume+1])
+        self.player.volume = int(self.volume * 100 / 8)
+        self.playbar.update()
 
     def keypress(self, size, key):
         if key == 'tab':
