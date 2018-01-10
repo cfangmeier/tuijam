@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from os.path import join, expanduser
+from itertools import zip_longest
 
 import urwid
 import gmusicapi
@@ -109,24 +110,27 @@ class PlayBar(urwid.ProgressBar):
 
 
 class MusicObject:
+
     @staticmethod
-    def to_ui(*txts):
-        first, *rest = [str(txt) for txt in txts]
-        items = [urwid.SelectableIcon(first, 0)]
-        for line in rest:
-            items.append(urwid.Text(line))
+    def to_ui(*txts, weights=()):
+        first, *rest = [(weight, str(txt)) for weight, txt in zip_longest(weights, txts, fillvalue=1)]
+        items = [('weight', first[0], urwid.SelectableIcon(first[1], 0))]
+        for weight, line in rest:
+            items.append(('weight', weight, urwid.Text(line)))
         line = urwid.Columns(items)
         line = urwid.AttrMap(line, 'search normal', 'search select')
         return line
 
     @staticmethod
-    def header_ui(*txts):
-        header = urwid.Columns([('weight', 1, urwid.Text(('header', txt)))
-                                for txt in txts])
+    def header_ui(*txts, weights=()):
+        header = urwid.Columns([('weight', weight, urwid.Text(('header', txt)))
+                                for weight, txt in zip_longest(weights, txts, fillvalue=1)])
         return urwid.AttrMap(header, 'header_bg')
 
 
 class Song(MusicObject):
+    ui_weights = (1, 1, 1, 0.2)
+
     def __init__(self, title, album, albumId, artist, artistId, id_, type_, length):
         self.title = title
         self.album = album
@@ -148,11 +152,12 @@ class Song(MusicObject):
 
     def ui(self):
         return self.to_ui(self.title, self.album, self.artist,
-                          '{:02d}:{:02d}'.format(*self.length))
+                          '{:02d}:{:02d}'.format(*self.length),
+                          weights=self.ui_weights)
 
-    @staticmethod
-    def header():
-        return MusicObject.header_ui('Title', 'Album', 'Artist', 'Length')
+    @classmethod
+    def header(cls):
+        return MusicObject.header_ui('Title', 'Album', 'Artist', 'Length', weights=cls.ui_weights)
 
     @staticmethod
     def from_dict(d):
