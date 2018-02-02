@@ -1,10 +1,22 @@
 #!/usr/bin/env python3
+# coding=utf-8
 from os.path import join, expanduser
 from itertools import zip_longest
 
 import urwid
 import gmusicapi
 import logging
+
+WELCOME = '''
+   ▄             ▀       ▀                
+ ▄▄█▄▄  ▄   ▄  ▄▄▄     ▄▄▄    ▄▄▄   ▄▄▄▄▄ 
+   █    █   █    █       █   ▀   █  █ █ █ 
+   █    █   █    █       █   ▄▀▀▀█  █ █ █ 
+   ▀▄▄  ▀▄▄▀█  ▄▄█▄▄     █   ▀▄▄▀█  █ █ █ 
+                         █                
+                       ▀▀                 
+         - A Google Music Player -        
+'''
 
 
 def sec_to_min_sec(sec_tot):
@@ -108,14 +120,24 @@ class Album(MusicObject):
     @staticmethod
     def from_dict(d):
         try:
-            title = d['name']
-            artist = d['albumArtist']
-            artistId = d['artistId'][0]
+            try:
+                title = d['name']
+            except KeyError:
+                title = d['title']
+            try:
+                artist = d['albumArtist']
+                artistId = d['artistId'][0]
+            except KeyError:
+                artist = d['artist_name']
+                artistId = d['artist_metajam_id']
             try:
                 year = d['year']
             except KeyError:
                 year = ''
-            id_ = d['albumId']
+            try:
+                id_ = d['albumId']
+            except KeyError:
+                id_ = d['id']['metajamCompactKey']
             return Album(title, artist, artistId, year, id_)
         except KeyError as e:
             logging.exception(f"Missing Key {e} in dict \n{d}")
@@ -148,6 +170,81 @@ class Artist(MusicObject):
             return None
 
 
+class Situation(MusicObject):
+    ui_weights = (0.2, 1)
+
+    def __init__(self, title, description, id_, stations):
+        self.title = title
+        self.description = description
+        self.id = id_
+        self.stations = stations
+
+    def __repr__(self):
+        return f'<Situation title:{self.title}>'
+
+    def ui(self):
+        return self.to_ui(self.title, self.description)
+
+    @staticmethod
+    def header():
+        return MusicObject.header_ui('Situation', 'Description')
+
+    @staticmethod
+    def from_dict(d):
+        try:
+            title = d['title']
+            description = d['description']
+            id_ = d['id']
+            situations = [d]
+            stations = []
+            while situations:
+                situation = situations.pop()
+                if 'situations' in situation:
+                    situations.extend(situation['situations'])
+                else:
+                    stations.extend([RadioStation(station['name'], [], id_=station['seed']['curatedStationId'])
+                                     for station in situation['stations']])
+            return Situation(title, description, id_, stations)
+        except KeyError as e:
+            logging.exception(f"Missing Key {e} in dict \n{d}")
+            return None
+
+
+class RadioStation(MusicObject):
+
+    def __init__(self, title, seeds, id_=None):
+        self.title = title
+        self.seeds = seeds
+        self.id = id_
+
+    def __repr__(self):
+        return f'<RadioStation title:{self.title}>'
+
+    def ui(self):
+        return self.to_ui(self.title)
+
+    def get_station_id(self, api):
+        if self.id:
+            return api.create_station(self.title, curated_station_id=self.id)
+        else:
+            seed = self.seeds[0]
+            return api.create_station(self.title, artist_id=seed['artistId'])
+
+    @staticmethod
+    def header():
+        return MusicObject.header_ui('Station Name')
+
+    @staticmethod
+    def from_dict(d):
+        try:
+            title = d['title']
+            seeds = d['id']['seeds']
+            return RadioStation(title, seeds)
+        except KeyError as e:
+            logging.exception(f"Missing Key {e} in dict \n{d}")
+            return None
+
+
 class SearchInput(urwid.Edit):
     def __init__(self, app):
         self.app = app
@@ -159,6 +256,8 @@ class SearchInput(urwid.Edit):
             if txt:
                 self.set_edit_text('')
                 self.app.search(txt)
+            else:
+                self.app.listen_now()
             return None
         else:
             size = (size[0],)
@@ -170,8 +269,10 @@ class SearchPanel(urwid.ListBox):
         self.app = app
         self.walker = urwid.SimpleFocusListWalker([])
         self.history = []
-        self.search_results = ([], [], [])
+        self.search_results = ([], [], [], [], [])
         super().__init__(self.walker)
+
+        self.walker.append(urwid.Text(WELCOME, align='center'))
 
     def keypress(self, size, key):
         if key == 'q':
@@ -181,6 +282,9 @@ class SearchPanel(urwid.ListBox):
                     self.app.queue_panel.add_song_to_queue(selected)
                 elif type(selected) == Album:
                     self.app.queue_panel.add_album_to_queue(selected)
+                elif type(selected) == RadioStation:
+                    for song in self.app.get_radio_songs(selected.get_station_id(self.app.g_api)):
+                        self.app.queue_panel.add_song_to_queue(song)
         elif key == 'e':
             if self.selected_search_obj() is not None:
                 self.app.expand(self.selected_search_obj())
@@ -198,55 +302,47 @@ class SearchPanel(urwid.ListBox):
 
     def back(self):
         if self.history:
-            self.set_search_results(*self.history.pop())
+            prev_focus, history = self.history.pop()
+            self.set_search_results(*history)
+            try:
+                self.set_focus(prev_focus)
+            except IndexError:
+                pass
 
-    def update_search_results(self, songs, albums, artists):
-        self.history.append(self.search_results)
-        self.set_search_results(songs, albums, artists)
+    def update_search_results(self, songs, albums, artists, situations, radio_stations):
+        self.history.append((self.get_focus()[1], self.search_results))
+        self.set_search_results(songs, albums, artists, situations, radio_stations)
 
-    def set_search_results(self, songs, albums, artists):
+    def set_search_results(self, songs, albums, artists, situations, radio_stations):
         songs = [obj for obj in songs if obj is not None]
         albums = [obj for obj in albums if obj is not None]
         artists = [obj for obj in artists if obj is not None]
-        self.search_results = (songs, albums, artists)
+        situations = [obj for obj in situations if obj is not None]
+        radio_stations = [obj for obj in radio_stations if obj is not None]
+        self.search_results = (songs, albums, artists, situations, radio_stations)
 
         self.walker.clear()
 
-        if artists:
-            self.walker.append(Artist.header())
-        for artist in artists:
-            self.walker.append(artist.ui())
-
-        if albums:
-            self.walker.append(Album.header())
-        for album in albums:
-            self.walker.append(album.ui())
-
-        if songs:
-            self.walker.append(Song.header())
-        for song in songs:
-            self.walker.append(song.ui())
+        for group in [artists, albums, songs, situations, radio_stations]:
+            if group:
+                self.walker.append(type(group[0]).header())
+            for item in group:
+                self.walker.append(item.ui())
 
         if self.walker:
             self.walker.set_focus(1)
 
     def selected_search_obj(self):
         focus_id = self.walker.get_focus()[1]
-        songs, albums, artists = self.search_results
+        songs, albums, artists, situations, radio_stations = self.search_results
 
         try:
-            if artists:
-                focus_id -= 1
-                if focus_id < len(artists):
-                    return artists[focus_id]
-                focus_id -= len(artists)
-            if albums:
-                focus_id -= 1
-                if focus_id < len(albums):
-                    return albums[focus_id]
-                focus_id -= len(albums)
-            focus_id -= 1
-            return songs[focus_id]
+            for group in [artists, albums, songs, situations, radio_stations]:
+                if group:
+                    focus_id -= 1
+                    if focus_id < len(group):
+                        return group[focus_id]
+                    focus_id -= len(group)
         except (IndexError, TypeError):
             return None
 
@@ -470,10 +566,6 @@ class App(urwid.Pile):
         self.search_panel_wrapped = search_panel_wrapped
 
         self.playbar = PlayBar(self, 'progress_remaining', 'progress', current=0, done=100)
-        # self.now_playing = urwid.Text('')
-        # self.progress = urwid.Text('0:00/0:00', align='right')
-        # status_line = urwid.Columns([('weight', 3, self.now_playing),
-        #                              ('weight', 1, self.progress)])
 
         self.queue_panel = QueuePanel(self)
         queue_panel_wrapped = urwid.LineBox(self.queue_panel, title='Queue')
@@ -601,9 +693,11 @@ class App(urwid.Pile):
             return self.focus.keypress(size, key)
 
     def expand(self, obj):
+        # TODO: Adds handling of Situation and RadioStation
         if obj is None:
             return
 
+        songs, albums, artists, situations, radio_stations = [[]]*5
         if type(obj) == Song:
             album_info = self.g_api.get_album_info(obj.albumId)
 
@@ -616,14 +710,21 @@ class App(urwid.Pile):
             songs = [Song.from_dict(track) for track in album_info['tracks']]
             albums = [obj]
             artists = [Artist(obj.artist, obj.artistId)]
-        else:  # Artist
+        elif type(obj) == Artist:
             artist_info = self.g_api.get_artist_info(obj.id)
 
             songs = [Song.from_dict(track) for track in artist_info['topTracks']]
             albums = [Album.from_dict(album) for album in artist_info.get('albums', [])]
             artists = [Artist.from_dict(artist) for artist in artist_info['related_artists']]
             artists.insert(0, obj)
-        self.search_panel.update_search_results(songs, albums, artists)
+        elif type(obj) == Situation:
+            radio_stations = obj.stations
+            situations = [obj]
+        elif type(obj) == RadioStation:
+            station_id = obj.get_station_id(self.g_api)
+            songs = self.get_radio_songs(station_id)
+            radio_stations = [obj]
+        self.search_panel.update_search_results(songs, albums, artists, situations, radio_stations)
 
     def search(self, query):
         results = self.g_api.search(query)
@@ -632,22 +733,40 @@ class App(urwid.Pile):
         albums = [Album.from_dict(hit['album']) for hit in results['album_hits']]
         artists = [Artist.from_dict(hit['artist']) for hit in results['artist_hits']]
 
-        self.search_panel.update_search_results(songs, albums, artists)
+        self.search_panel.update_search_results(songs, albums, artists, [], [])
+        self.set_focus(self.search_panel_wrapped)
+
+    def listen_now(self):
+        situations = self.g_api.get_listen_now_situations()
+        items = self.g_api.get_listen_now_items()
+
+        situations = [Situation.from_dict(hit) for hit in situations]
+        albums = [Album.from_dict(hit['album']) for hit in items if 'album' in hit]
+        radio_stations = [RadioStation.from_dict(hit['radio_station']) for hit in items if 'radio_station' in hit]
+
+        self.search_panel.update_search_results([], albums, [], situations, radio_stations)
         self.set_focus(self.search_panel_wrapped)
 
     def create_radio_station(self, obj):
         if type(obj) == Song:
-            station_name = obj.title + " radio"
-            station_id = self.g_api.create_station(station_name, track_id=obj.id)
+            station_id = self.g_api.create_station(obj.title, track_id=obj.id)
         elif type(obj) == Album:
-            station_name = obj.title + " radio"
-            station_id = self.g_api.create_station(station_name, album_id=obj.id)
-        else:  # Artist
-            station_name = obj.name + " radio"
-            station_id = self.g_api.create_station(station_name, artist_id=obj.id)
-        song_dicts = self.g_api.get_station_tracks(station_id, num_tracks=50)
-        for song_dict in song_dicts:
-            self.queue_panel.add_song_to_queue(Song.from_dict(song_dict))
+            station_id = self.g_api.create_station(obj.title, album_id=obj.id)
+        elif type(obj) == Artist:
+            station_id = self.g_api.create_station(obj.name, artist_id=obj.id)
+        elif type(obj) == RadioStation:
+            station_id = obj.get_station_id(self.g_api)
+        else:
+            raise TypeError("Bad for radio station: " + type(obj))
+        for song in self.get_radio_songs(station_id):
+            self.queue_panel.add_song_to_queue(song)
+
+    def get_radio_songs(self, station_id, n=50):
+        song_dicts = self.g_api.get_station_tracks(station_id, num_tracks=n)
+        return [Song.from_dict(song_dict) for song_dict in song_dicts]
+        # for song_dict in song_dicts:
+        #     self.queue_panel.add_song_to_queue(Song.from_dict(song_dict))
+        #     s
 
     def cleanup(self):
         self.player.quit()
@@ -655,14 +774,14 @@ class App(urwid.Pile):
         self.g_api.logout()
 
 
-if __name__ == '__main__':
+def main():
     log_file = join(expanduser('~'), '.config', 'tuijam', 'log.txt')
-    logging.basicConfig(filename=log_file, filemode='w', level=logging.ERROR)
+    logging.basicConfig(filename=log_file, filemode='w', level=logging.WARNING)
     app = App()
 
     import signal
 
-    def handle_sigint(signum, frame):
+    def handle_sigint(sigm, frame):
         raise urwid.ExitMainLoop()
     signal.signal(signal.SIGINT, handle_sigint)
 
@@ -675,3 +794,7 @@ if __name__ == '__main__':
         logging.exception(e)
         print("Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) for more information.")
     app.cleanup()
+
+
+if __name__ == '__main__':
+    main()
