@@ -693,7 +693,6 @@ class App(urwid.Pile):
             return self.focus.keypress(size, key)
 
     def expand(self, obj):
-        # TODO: Adds handling of Situation and RadioStation
         if obj is None:
             return
 
