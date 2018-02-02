@@ -52,6 +52,7 @@ the config file.
     - `delete` remove selected song from queue
   - In input window,
     - Type search query and press enter. Results are shown in search window.
+    - Enter an empty query to view the suggested "Listen Now" stations and albums.
 
 
 # Thanks
