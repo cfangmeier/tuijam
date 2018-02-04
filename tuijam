@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # coding=utf-8
-from os.path import join, expanduser
+from os.path import join, expanduser, isfile, dirname
+from os import makedirs
 from itertools import zip_longest
+from getpass import getpass
 
 import urwid
 import gmusicapi
 import logging
+import yaml
 
 WELCOME = '''
    ▄             ▀       ▀                
@@ -545,10 +548,10 @@ class App(urwid.Pile):
 
     def __init__(self):
 
-        self.read_config()
+        email, password, device_id = self.read_config()
 
         self.g_api = gmusicapi.Mobileclient(debug_logging=False)
-        self.g_api.login(self.email, self.password, self.device_id)
+        self.g_api.login(email, password, device_id)
 
         import mpv
         self.player = mpv.MPV()
@@ -587,13 +590,81 @@ class App(urwid.Pile):
         self.history = []
 
     def read_config(self):
-        import yaml
         config_file = join(expanduser('~'), '.config', 'tuijam', 'config.yaml')
+        if not isfile(config_file):
+            self.first_time_setup()
+
         with open(config_file) as f:
             config = yaml.load(f.read())
-            self.email = config['email']
-            self.password = config['password']
-            self.device_id = config['device_id']
+            if config['encrypted']:
+                from scrypt import decrypt
+                config_pw = getpass("Enter tuijam config pw: ")
+                try:
+                    email = decrypt(config['email'], config_pw, maxtime=20)
+                    password = decrypt(config['password'], config_pw, maxtime=20)
+                    device_id = decrypt(config['device_id'], config_pw, maxtime=20)
+                except Exception as e:
+                    print(e)
+                    print("Could not decrypt config file.")
+                    exit(1)
+            else:
+                email = config['email']
+                password = config['password']
+                device_id = config['device_id']
+        return (email, password, device_id)
+
+    def first_time_setup(self):
+        print("Need to perform first time setup")
+        email = input("Enter gmusic email: ")
+        pw = getpass("Enter gmusic password: ")
+
+        print("Your login details will now be verified, and a list of valid device ids printed.")
+        self.display_device_ids(email, pw)
+        d_id = input("Enter a device_id: ")
+
+        print("Enter a password to encrypt/decrypt the generated config file.")
+        print("You will need to enter this each time you start tuijam.")
+        print("If you forget this, delete the config file and start tuijam.")
+        print("Leave blank if no encryption is desired.")
+        config_pw = getpass("password: ")
+
+        print("")
+        self.write_config(email, pw, d_id, config_pw)
+
+    def write_config(self, email, password, device_id, config_pw):
+        use_encryption = len(config_pw) > 0
+        if (use_encryption):
+            from scrypt import encrypt
+            data = dict(
+                encrypted=True,
+                email=encrypt(email, config_pw, maxtime=0.5),
+                password=encrypt(password, config_pw, maxtime=0.5),
+                device_id=encrypt(device_id, config_pw, maxtime=0.5)
+            )
+        else:
+            data = dict(
+                encrypted=False,
+                email=email,
+                password=password,
+                device_id=device_id
+            ) 
+        config_file = join(expanduser('~'), '.config', 'tuijam', 'config.yaml')
+        makedirs(dirname(config_file), exist_ok=True)
+        with open(config_file, "w") as outfile:
+            yaml.dump(data, outfile, default_flow_style=False)
+
+    def display_device_ids(self, email, password):
+        mc = gmusicapi.Mobileclient()
+
+        if not mc.login(email, password, mc.FROM_MAC_ADDRESS):
+            print('Login failed, verify your email and password.')
+            exit(1)
+
+        for i, id in enumerate([
+            d['id'][2:] if d['id'].startswith('0x') else d['id'].replace(':', '')  # noqa
+            for d in mc.get_registered_devices()
+        ]):
+            print('%d: %s' % (i + 1, id))
 
     def refresh(self, *args, **kwargs):
         if self.play_state == 'play' and self.player.eof_reached:
