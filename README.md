@@ -18,17 +18,16 @@ python setup.py install --user
 ```
 
 # Configuration
-Login credentials are stored in `$HOME/.config/tuijam/config.yaml`. An example config file might look like:
+When you first launch TUIJam, it checks for a config file in `$HOME/.config/tuijam/config.yaml` with the following content:
 ```yaml
 email: you@your-email.com
 password: your-password
 device_id: yourdeviceid
 ```
+If this file doesn't exist, TUIJam will guide you through a first-time setup where you will need to supply your google music email, password, and (optionally) a separate password to encrypt your google credentials locally.
+
 Note that if you have 2-factor setup on your Google account, you need to make
-an app-password for TUIJam. To find your device ID, first put your email and
-password in the config file, then run `tuijam-get-dev-id`. If your login
-works, you will get a list of acceptable device ids, place any one of them into
-the config file.
+an app-password for TUIJam.
 
 # Controls
   - `ctrl-c` quit
