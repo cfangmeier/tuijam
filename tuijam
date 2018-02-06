@@ -19,7 +19,7 @@ WELCOME = '''
                          █                
                        ▀▀                 
          - A Google Music Player -        
-'''
+'''  # noqa
 
 
 def sec_to_min_sec(sec_tot):
@@ -372,15 +372,6 @@ class PlayBar(urwid.ProgressBar):
         if self.app.current_song is None:
             return 'Idle'
         progress, total = self.get_prog_tot()
-        # return [u' \u25B6 ' if self.app.play_state == 'play' else u' \u25A0 ',
-        #         ('np_artist', self.app.current_song.artist),
-        #         ' - ',
-        #         ('np_song', self.app.current_song.title),
-        #         '  [{:02d}:{:02d} / {:02d}:{:02d}]'.format(progress // 60,
-        #                                                    progress % 60,
-        #                                                    total // 60,
-        #                                                    total % 60)
-        #         ]
         return ' {} {} - {} [{:02d}:{:02d} / {:02d}:{:02d}] {}'.format(
             '▶' if self.app.play_state == 'play' else '■',
             self.app.current_song.artist,
@@ -548,11 +539,6 @@ class App(urwid.Pile):
 
     def __init__(self):
 
-        email, password, device_id = self.read_config()
-
-        self.g_api = gmusicapi.Mobileclient(debug_logging=False)
-        self.g_api.login(email, password, device_id)
-
         import mpv
         self.player = mpv.MPV()
         self.player.volume = 100
@@ -589,16 +575,29 @@ class App(urwid.Pile):
         self.current_song = None
         self.history = []
 
+    def login(self):
+        self.g_api = gmusicapi.Mobileclient(debug_logging=False)
+
+        credentials = self.read_config()
+        if credentials is None:
+            return False
+        else:
+            return self.g_api.login(*credentials)
+
     def read_config(self):
         config_file = join(expanduser('~'), '.config', 'tuijam', 'config.yaml')
         if not isfile(config_file):
-            self.first_time_setup()
+            if not self.first_time_setup():
+                return None
 
         with open(config_file) as f:
             config = yaml.load(f.read())
             if config['encrypted']:
                 from scrypt import decrypt
-                config_pw = getpass("Enter tuijam config pw: ")
+                try:
+                    config_pw = self.config_pw  # From first_time_setup
+                except AttributeError:
+                    config_pw = getpass("Enter tuijam config pw: ")
                 try:
                     email = decrypt(config['email'], config_pw, maxtime=20)
                     password = decrypt(config['password'], config_pw, maxtime=20)
@@ -611,29 +610,36 @@ class App(urwid.Pile):
                 email = config['email']
                 password = config['password']
                 device_id = config['device_id']
-        return (email, password, device_id)
+        return email, password, device_id
 
     def first_time_setup(self):
         print("Need to perform first time setup")
-        email = input("Enter gmusic email: ")
-        pw = getpass("Enter gmusic password: ")
+        while True:
+            email = input("Enter gmusic email (empty to quit): ")
+            if not email:
+                return False
+            pw = getpass("Enter gmusic password: ")
 
-        print("Your login details will now be verified, and a list of valid device ids printed.")
-        self.display_device_ids(email, pw)
-        d_id = input("Enter a device_id: ")
+            d_id = self.get_device_id(email, pw)
+
+            if d_id is not None:
+                break  # Success!
+            print(('Login failed, verify your email and password.\n'
+                   'Remember, you need an app-password if you have 2FA enabled.'))
 
         print("Enter a password to encrypt/decrypt the generated config file.")
         print("You will need to enter this each time you start tuijam.")
         print("If you forget this, delete the config file and start tuijam.")
         print("Leave blank if no encryption is desired.")
-        config_pw = getpass("password: ")
+        self.config_pw = getpass("password: ")
 
-        print("")
-        self.write_config(email, pw, d_id, config_pw)
+        print()
+        self.write_config(email, pw, d_id, self.config_pw)
+        return True
 
     def write_config(self, email, password, device_id, config_pw):
         use_encryption = len(config_pw) > 0
-        if (use_encryption):
+        if use_encryption:
             from scrypt import encrypt
             data = dict(
                 encrypted=True,
@@ -647,24 +653,24 @@ class App(urwid.Pile):
                 email=email,
                 password=password,
                 device_id=device_id
-            ) 
+            )
         config_file = join(expanduser('~'), '.config', 'tuijam', 'config.yaml')
         makedirs(dirname(config_file), exist_ok=True)
         with open(config_file, "w") as outfile:
             yaml.dump(data, outfile, default_flow_style=False)
 
-    def display_device_ids(self, email, password):
-        mc = gmusicapi.Mobileclient()
+    def get_device_id(self, email, password):
+        if not self.g_api.login(email, password, self.g_api.FROM_MAC_ADDRESS):
+            return None
 
-        if not mc.login(email, password, mc.FROM_MAC_ADDRESS):
-            print('Login failed, verify your email and password.')
-            exit(1)
-
-        for i, id in enumerate([
-            d['id'][2:] if d['id'].startswith('0x') else d['id'].replace(':', '')  # noqa
-            for d in mc.get_registered_devices()
-        ]):
-            print('%d: %s' % (i + 1, id))
+        ids = [d['id'][2:] if d['id'].startswith('0x') else d['id'].replace(':', '')
+               for d in self.g_api.get_registered_devices()]
+        self.g_api.logout()
+        try:
+            return ids[0]
+        except IndexError:
+            print("No device ids found. This shouldn't happen...")
+            return None
 
     def refresh(self, *args, **kwargs):
         if self.play_state == 'play' and self.player.eof_reached:
@@ -834,9 +840,6 @@ class App(urwid.Pile):
     def get_radio_songs(self, station_id, n=50):
         song_dicts = self.g_api.get_station_tracks(station_id, num_tracks=n)
         return [Song.from_dict(song_dict) for song_dict in song_dicts]
-        # for song_dict in song_dicts:
-        #     self.queue_panel.add_song_to_queue(Song.from_dict(song_dict))
-        #     s
 
     def cleanup(self):
         self.player.quit()
@@ -848,6 +851,8 @@ def main():
     log_file = join(expanduser('~'), '.config', 'tuijam', 'log.txt')
     logging.basicConfig(filename=log_file, filemode='w', level=logging.WARNING)
     app = App()
+    if not app.login():
+        return
 
     import signal
 
