@@ -752,7 +752,7 @@ class App(urwid.Pile):
         elif key == 'ctrl n':
             self.queue_panel.play_next()
         elif key == 'ctrl r':
-            self.search_panel.update_search_results(self.history, [], [])
+            self.search_panel.update_search_results(self.history, [], [], [], [])
         elif key == 'ctrl s':
             self.queue_panel.shuffle()
         elif self.focus != self.search_input:
