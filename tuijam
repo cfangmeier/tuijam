@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # coding=utf-8
-from os.path import join, expanduser, isfile, dirname
+from os.path import join, expanduser, isfile
 from os import makedirs
 from itertools import zip_longest
 from getpass import getpass
@@ -21,6 +21,8 @@ WELCOME = '''
          - A Google Music Player -        
 '''  # noqa
 
+
+CONFIG_DIR = join(expanduser('~'), '.config', 'tuijam')
 
 def sec_to_min_sec(sec_tot):
     if sec_tot is None:
@@ -585,7 +587,7 @@ class App(urwid.Pile):
             return self.g_api.login(*credentials)
 
     def read_config(self):
-        config_file = join(expanduser('~'), '.config', 'tuijam', 'config.yaml')
+        config_file = join(CONFIG_DIR, 'config.yaml')
         if not isfile(config_file):
             if not self.first_time_setup():
                 return None
@@ -654,8 +656,7 @@ class App(urwid.Pile):
                 password=password,
                 device_id=device_id
             )
-        config_file = join(expanduser('~'), '.config', 'tuijam', 'config.yaml')
-        makedirs(dirname(config_file), exist_ok=True)
+        config_file = join(CONFIG_DIR, 'config.yaml')
         with open(config_file, "w") as outfile:
             yaml.dump(data, outfile, default_flow_style=False)
 
@@ -848,7 +849,8 @@ class App(urwid.Pile):
 
 
 def main():
-    log_file = join(expanduser('~'), '.config', 'tuijam', 'log.txt')
+    makedirs(CONFIG_DIR, exist_ok=True)
+    log_file = join(CONFIG_DIR, 'log.txt')
     logging.basicConfig(filename=log_file, filemode='w', level=logging.WARNING)
     app = App()
     if not app.login():
