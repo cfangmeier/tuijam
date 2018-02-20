@@ -21,8 +21,8 @@ WELCOME = '''
          - A Google Music Player -        
 '''  # noqa
 
-
 CONFIG_DIR = join(expanduser('~'), '.config', 'tuijam')
+
 
 def sec_to_min_sec(sec_tot):
     if sec_tot is None:
@@ -105,6 +105,7 @@ class Song(MusicObject):
 
 
 class Album(MusicObject):
+
     def __init__(self, title, artist, artistId, year, id_):
         self.title = title
         self.artist = artist
@@ -150,6 +151,7 @@ class Album(MusicObject):
 
 
 class Artist(MusicObject):
+
     def __init__(self, name, id_):
         self.name = name
         self.id = id_
@@ -251,6 +253,7 @@ class RadioStation(MusicObject):
 
 
 class SearchInput(urwid.Edit):
+
     def __init__(self, app):
         self.app = app
         super().__init__('search > ', multiline=False, allow_tab=False)
@@ -270,6 +273,7 @@ class SearchInput(urwid.Edit):
 
 
 class SearchPanel(urwid.ListBox):
+
     def __init__(self, app):
         self.app = app
         self.walker = urwid.SimpleFocusListWalker([])
@@ -353,7 +357,6 @@ class SearchPanel(urwid.ListBox):
 
 
 class PlayBar(urwid.ProgressBar):
-    # Class stolen from: https://github.com/and3rson/clay/blob/master/clay/playbar.py
     vol_inds = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█']
 
     def __init__(self, app, *args, **kwargs):
@@ -395,48 +398,9 @@ class PlayBar(urwid.ProgressBar):
         else:
             self.set_completion(0)
 
-    def render(self, size, focus=False):
-        """
-        Render the progress bar - fixed implementation.
-        For details see https://github.com/urwid/urwid/pull/261
-        """
-        (maxcol,) = size
-        txt = urwid.Text(self.get_text(), self.text_align, urwid.widget.CLIP)
-        c = txt.render((maxcol,))
-
-        cf = float(self.current) * maxcol / self.done
-        ccol_dirty = int(cf)
-        ccol = len(c._text[0][:ccol_dirty].decode(
-            'utf-8', 'ignore'
-        ).encode(
-            'utf-8'
-        ))
-        cs = 0
-        if self.satt is not None:
-            cs = int((cf - ccol) * 8)
-        if ccol < 0 or (ccol == 0 and cs == 0):
-            c._attr = [[(self.normal, maxcol)]]
-        elif ccol >= maxcol:
-            c._attr = [[(self.complete, maxcol)]]
-        elif cs and c._text[0][ccol] == " ":
-            t = c._text[0]
-            cenc = self.eighths[cs].encode("utf-8")
-            c._text[0] = t[:ccol] + cenc + t[ccol + 1:]
-            a = []
-            if ccol > 0:
-                a.append((self.complete, ccol))
-            a.append((self.satt, len(cenc)))
-            if maxcol - ccol - 1 > 0:
-                a.append((self.normal, maxcol - ccol - 1))
-            c._attr = [a]
-            c._cs = [[(None, len(c._text[0]))]]
-        else:
-            c._attr = [[(self.complete, ccol),
-                        (self.normal, maxcol - ccol)]]
-        return c
-
 
 class QueuePanel(urwid.ListBox):
+
     def __init__(self, app):
         self.app = app
         self.walker = urwid.SimpleFocusListWalker([])
