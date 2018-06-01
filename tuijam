@@ -252,6 +252,39 @@ class RadioStation(MusicObject):
             return None
 
 
+class Playlist(MusicObject):
+    ui_weights = (.2, 1)
+
+    def __init__(self, name, songs=None, id_=None):
+        self.name = name
+        self.songs = songs
+        self.id = id_
+
+    def __repr__(self):
+        return f'<Playlist name:{self.name}>'
+
+    def ui(self):
+        return self.to_ui(self.name, str(len(self.songs)), weights=self.ui_weights)
+
+    @classmethod
+    def header(cls):
+        return MusicObject.header_ui('Playlist Name', '# Songs', weights=cls.ui_weights)
+
+    @staticmethod
+    def from_dict(d):
+        try:
+            name = d['name']
+            id_ = d['id']
+            songs = [Song.from_dict(song['track']) for song in d['tracks'] if 'track' in song]
+            if songs:
+                return Playlist(name, songs, id_)
+            else:
+                return None
+        except KeyError as e:
+            logging.exception(f"Missing Key {e} in dict \n{d}")
+            return None
+
+
 class SearchInput(urwid.Edit):
 
     def __init__(self, app):
@@ -278,7 +311,7 @@ class SearchPanel(urwid.ListBox):
         self.app = app
         self.walker = urwid.SimpleFocusListWalker([])
         self.history = []
-        self.search_results = ([], [], [], [], [])
+        self.search_results = ([], [], [], [], [], [])
         super().__init__(self.walker)
 
         self.walker.append(urwid.Text(WELCOME, align='center'))
@@ -294,7 +327,9 @@ class SearchPanel(urwid.ListBox):
                 elif type(selected) == RadioStation:
                     for song in self.app.get_radio_songs(selected.get_station_id(self.app.g_api)):
                         self.app.queue_panel.add_song_to_queue(song)
-        elif key == 'e':
+                elif type(selected) == Playlist:
+                    self.app.queue_panel.add_songs_to_queue(selected.songs)
+        elif key in ('e', 'enter'):
             if self.selected_search_obj() is not None:
                 self.app.expand(self.selected_search_obj())
         elif key == 'backspace':
@@ -318,21 +353,22 @@ class SearchPanel(urwid.ListBox):
             except IndexError:
                 pass
 
-    def update_search_results(self, songs, albums, artists, situations, radio_stations):
+    def update_search_results(self, songs, albums, artists, situations, radio_stations, playlists):
         self.history.append((self.get_focus()[1], self.search_results))
-        self.set_search_results(songs, albums, artists, situations, radio_stations)
+        self.set_search_results(songs, albums, artists, situations, radio_stations, playlists)
 
-    def set_search_results(self, songs, albums, artists, situations, radio_stations):
+    def set_search_results(self, songs, albums, artists, situations, radio_stations, playlists):
         songs = [obj for obj in songs if obj is not None]
         albums = [obj for obj in albums if obj is not None]
         artists = [obj for obj in artists if obj is not None]
         situations = [obj for obj in situations if obj is not None]
         radio_stations = [obj for obj in radio_stations if obj is not None]
-        self.search_results = (songs, albums, artists, situations, radio_stations)
+        playlists = [obj for obj in playlists if obj is not None]
+        self.search_results = (songs, albums, artists, situations, radio_stations, playlists)
 
         self.walker.clear()
 
-        for group in [artists, albums, songs, situations, radio_stations]:
+        for group in [artists, albums, songs, situations, radio_stations, playlists]:
             if group:
                 self.walker.append(type(group[0]).header())
             for item in group:
@@ -343,10 +379,10 @@ class SearchPanel(urwid.ListBox):
 
     def selected_search_obj(self):
         focus_id = self.walker.get_focus()[1]
-        songs, albums, artists, situations, radio_stations = self.search_results
+        songs, albums, artists, situations, radio_stations, playlists = self.search_results
 
         try:
-            for group in [artists, albums, songs, situations, radio_stations]:
+            for group in [artists, albums, songs, situations, radio_stations, playlists]:
                 if group:
                     focus_id -= 1
                     if focus_id < len(group):
@@ -412,6 +448,10 @@ class QueuePanel(urwid.ListBox):
             self.queue.append(song)
             self.walker.append(song.ui())
 
+    def add_songs_to_queue(self, songs):
+        for song in songs:
+            self.add_song_to_queue(song)
+
     def add_album_to_queue(self, album):
         album_info = self.app.g_api.get_album_info(album.id)
 
@@ -426,7 +466,7 @@ class QueuePanel(urwid.ListBox):
             self.queue.pop(idx)
             self.walker.pop(idx)
 
-    def clear(self, idx):
+    def clear(self):
         self.queue.clear()
         self.walker.clear()
 
@@ -509,6 +549,9 @@ class App(urwid.Pile):
         self.player = mpv.MPV()
         self.player.volume = 100
         self.volume = 8
+        self.g_api = None
+        self.loop = None
+        self.config_pw = None
 
         @self.player.event_callback('end_file')
         def callback(event):
@@ -556,6 +599,7 @@ class App(urwid.Pile):
             if not self.first_time_setup():
                 return None
 
+        email, password, device_id = None, None, None
         with open(config_file) as f:
             config = yaml.load(f.read())
             if config['encrypted']:
@@ -603,7 +647,8 @@ class App(urwid.Pile):
         self.write_config(email, pw, d_id, self.config_pw)
         return True
 
-    def write_config(self, email, password, device_id, config_pw):
+    @staticmethod
+    def write_config(email, password, device_id, config_pw):
         use_encryption = len(config_pw) > 0
         if use_encryption:
             from scrypt import encrypt
@@ -717,7 +762,7 @@ class App(urwid.Pile):
         elif key == 'ctrl n':
             self.queue_panel.play_next()
         elif key == 'ctrl r':
-            self.search_panel.update_search_results(self.history, [], [], [], [])
+            self.search_panel.update_search_results(self.history, [], [], [], [], [])
         elif key == 'ctrl s':
             self.queue_panel.shuffle()
         elif self.focus != self.search_input:
@@ -738,7 +783,7 @@ class App(urwid.Pile):
         if obj is None:
             return
 
-        songs, albums, artists, situations, radio_stations = [[]]*5
+        songs, albums, artists, situations, radio_stations, playlists = [[]]*6
         if type(obj) == Song:
             album_info = self.g_api.get_album_info(obj.albumId)
 
@@ -765,7 +810,10 @@ class App(urwid.Pile):
             station_id = obj.get_station_id(self.g_api)
             songs = self.get_radio_songs(station_id)
             radio_stations = [obj]
-        self.search_panel.update_search_results(songs, albums, artists, situations, radio_stations)
+        elif type(obj) == Playlist:
+            songs = obj.songs
+            playlists = [obj]
+        self.search_panel.update_search_results(songs, albums, artists, situations, radio_stations, playlists)
 
     def search(self, query):
         results = self.g_api.search(query)
@@ -774,18 +822,20 @@ class App(urwid.Pile):
         albums = [Album.from_dict(hit['album']) for hit in results['album_hits']]
         artists = [Artist.from_dict(hit['artist']) for hit in results['artist_hits']]
 
-        self.search_panel.update_search_results(songs, albums, artists, [], [])
+        self.search_panel.update_search_results(songs, albums, artists, [], [], [])
         self.set_focus(self.search_panel_wrapped)
 
     def listen_now(self):
         situations = self.g_api.get_listen_now_situations()
         items = self.g_api.get_listen_now_items()
+        playlists = self.g_api.get_all_user_playlist_contents()
 
         situations = [Situation.from_dict(hit) for hit in situations]
         albums = [Album.from_dict(hit['album']) for hit in items if 'album' in hit]
         radio_stations = [RadioStation.from_dict(hit['radio_station']) for hit in items if 'radio_station' in hit]
+        playlists = [Playlist.from_dict(playlist) for playlist in playlists]
 
-        self.search_panel.update_search_results([], albums, [], situations, radio_stations)
+        self.search_panel.update_search_results([], albums, [], situations, radio_stations, playlists)
         self.set_focus(self.search_panel_wrapped)
 
     def create_radio_station(self, obj):
