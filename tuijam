@@ -4,6 +4,7 @@ from os.path import join, expanduser, isfile
 from os import makedirs
 from itertools import zip_longest
 from getpass import getpass
+import sys
 
 import urwid
 import gmusicapi
@@ -22,6 +23,12 @@ WELCOME = '''
 '''  # noqa
 
 CONFIG_DIR = join(expanduser('~'), '.config', 'tuijam')
+
+RATE_UI = {
+    0: '－',
+    1: '👎',
+    5: '👍',
+}
 
 
 def sec_to_min_sec(sec_tot):
@@ -53,9 +60,9 @@ class MusicObject:
 
 
 class Song(MusicObject):
-    ui_weights = (1, 1, 1, 0.2)
+    ui_weights = (1, 1, 1, 0.2, 0.2)
 
-    def __init__(self, title, album, albumId, artist, artistId, id_, type_, length):
+    def __init__(self, title, album, albumId, artist, artistId, id_, type_, length, rating):
         self.title = title
         self.album = album
         self.albumId = albumId
@@ -64,6 +71,7 @@ class Song(MusicObject):
         self.id = id_
         self.type = type_
         self.length = length
+        self.rating = rating
 
     def __repr__(self):
         return f'<Song title:{self.title}, album:{self.album}, artist:{self.artist}>'
@@ -76,12 +84,12 @@ class Song(MusicObject):
 
     def ui(self):
         return self.to_ui(self.title, self.album, self.artist,
-                          '{:02d}:{:02d}'.format(*self.length),
+                          '{:02d}:{:02d}'.format(*self.length), RATE_UI[self.rating],
                           weights=self.ui_weights)
 
     @classmethod
     def header(cls):
-        return MusicObject.header_ui('Title', 'Album', 'Artist', 'Length', weights=cls.ui_weights)
+        return MusicObject.header_ui('Title', 'Album', 'Artist', 'Length', 'Rating', weights=cls.ui_weights)
 
     @staticmethod
     def from_dict(d):
@@ -98,7 +106,12 @@ class Song(MusicObject):
                 id_ = d['storeId']
                 type_ = 'store'
             length = sec_to_min_sec(int(d['durationMillis']) / 1000)
-            return Song(title, album, albumId, artist, artistId, id_, type_, length)
+            # rating scheme
+            #  0 - No Rating
+            #  1 - Thumbs down
+            #  5 - Thumbs up
+            rating = int(d.get('rating', 0))
+            return Song(title, album, albumId, artist, artistId, id_, type_, length, rating)
         except KeyError as e:
             logging.exception(f"Missing Key {e} in dict \n{d}")
             return None
@@ -862,7 +875,7 @@ class App(urwid.Pile):
         self.g_api.logout()
 
 
-def main():
+def main(debug=False):
     makedirs(CONFIG_DIR, exist_ok=True)
     log_file = join(CONFIG_DIR, 'log.txt')
     logging.basicConfig(filename=log_file, filemode='w', level=logging.WARNING)
@@ -870,22 +883,25 @@ def main():
     if not app.login():
         return
 
-    import signal
+    if not debug:
+        import signal
 
-    def handle_sigint(sigm, frame):
-        raise urwid.ExitMainLoop()
-    signal.signal(signal.SIGINT, handle_sigint)
+        def handle_sigint(sigm, frame):
+            raise urwid.ExitMainLoop()
+        signal.signal(signal.SIGINT, handle_sigint)
 
-    loop = urwid.MainLoop(app, app.palette)
-    app.loop = loop
-    loop.screen.set_terminal_properties(256)
-    try:
-        loop.run()
-    except Exception as e:
-        logging.exception(e)
-        print("Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) for more information.")
-    app.cleanup()
+        loop = urwid.MainLoop(app, app.palette)
+        app.loop = loop
+        loop.screen.set_terminal_properties(256)
+        try:
+            loop.run()
+        except Exception as e:
+            logging.exception(e)
+            print("Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) for more information.")
+        app.cleanup()
+    return app
 
 
 if __name__ == '__main__':
-    main()
+    debug = sys.argv[-1] == 'debug'
+    app = main(debug=debug)
