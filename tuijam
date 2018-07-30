@@ -633,6 +633,7 @@ class App(urwid.Pile):
                 email = config['email']
                 password = config['password']
                 device_id = config['device_id']
+            self.mpris_enabled = config.get('mpris_enabled', True)
         return email, password, device_id
 
     def first_time_setup(self):
@@ -678,6 +679,7 @@ class App(urwid.Pile):
                 password=password,
                 device_id=device_id
             )
+        data['mpris_enabled'] = True
         config_file = join(CONFIG_DIR, 'config.yaml')
         with open(config_file, "w") as outfile:
             yaml.dump(data, outfile, default_flow_style=False)
@@ -778,6 +780,8 @@ class App(urwid.Pile):
             self.search_panel.update_search_results(self.history, [], [], [], [], [])
         elif key == 'ctrl s':
             self.queue_panel.shuffle()
+        elif key == 'ctrl q':
+            raise urwid.ExitMainLoop()
         elif self.focus != self.search_input:
             if key == '>':
                 self.seek(10)
@@ -869,10 +873,212 @@ class App(urwid.Pile):
         song_dicts = self.g_api.get_station_tracks(station_id, num_tracks=n)
         return [Song.from_dict(song_dict) for song_dict in song_dicts]
 
-    def cleanup(self):
+    def cleanup(self, *args, **kwargs):
         self.player.quit()
         del self.player
         self.g_api.logout()
+        self.loop.stop()
+        sys.exit()
+
+    def setup_mpris(self):
+        from pydbus import SessionBus, Variant
+        from pydbus.generic import signal
+
+        class MPRIS:
+            """
+<node>
+  <interface name="org.mpris.MediaPlayer2">
+    <property name="CanQuit" type="b" access="read" />
+    <property name="CanRaise" type="b" access="read" />
+    <property name="HasTrackList" type="b" access="read" />
+    <property name="Identity" type="s" access="read" />
+    <property name="SupportedMimeTypes" type="as" access="read" />
+    <property name="SupportedUriSchemes" type="as" access="read" />
+    <method name="Quit" />
+    <method name="Raise" />
+  </interface>
+  <interface name="org.mpris.MediaPlayer2.Player">
+    <property name="PlaybackStatus" type="s" access="read" />
+    <property name="Rate" type="d" access="readwrite" />
+    <property name="Metadata" type="a{sv}" access="read" />
+    <property name="Volume" type="d" access="readwrite" />
+    <property name="Position" type="x" access="read" />
+    <property name="MinimumRate" type="d" access="readwrite" />
+    <property name="MaximumRate" type="d" access="readwrite" />
+    <property name="CanGoNext" type="b" access="read" />
+
+    <property name="CanGoPrevious" type="b" access="read" />
+    <property name="CanPlay" type="b" access="read" />
+    <property name="CanPause" type="b" access="read" />
+    <property name="CanSeek" type="b" access="read" />
+    <property name="CanControl" type="b" access="read" />
+
+    <method name="Next" />
+    <method name="Previous" />
+    <method name="Pause" />
+    <method name="PlayPause" />
+    <method name="Stop" />
+    <method name="Play" />
+    <method name="Seek">
+      <arg type="x" direction="in" />
+    </method>
+    <method name="SetPosition">
+      <arg type="o" direction="in" />
+      <arg type="x" direction="in" />
+    </method>
+    <method name="OpenUri">
+      <arg type="s" direction="in" />
+    </method>
+  </interface>
+</node>
+            """
+            #  TODO: Decide which properties should get wired up to this signal
+            PropertiesChanged = signal()
+
+            def __init__(self, app):
+                self.app = app
+
+            @property
+            def CanQuit(self):
+                return False
+
+            @property
+            def CanRaise(self):
+                return False
+
+            @property
+            def HasTrackList(self):
+                return False
+
+            @property
+            def Identity(self):
+                return "TUIJam"
+
+            @property
+            def SupportedMimeTypes(self):
+                return []
+
+            @property
+            def SupportedUriSchemes(self):
+                return []
+
+            def Raise(self):
+                pass
+
+            def Quit(self):
+                pass
+
+            @property
+            def PlaybackStatus(self):
+                return {
+                    'play': 'Playing',
+                    'pause': 'Paused',
+                    'stop': 'Stopped'
+                }[self.app.play_state]
+
+            @property
+            def Rate(self):
+                return 1.0
+
+            @Rate.setter
+            def Rate(self, rate):
+                pass
+
+            @property
+            def Metadata(self):
+                song = self.app.current_song
+                if song is not None:
+                    return {
+                        'mpris:trackid': Variant('s', song.id),
+                        'xesam:title': Variant('s', song.title),
+                        'xesam:artist': Variant('s', song.artist),
+                        'xesam:album': Variant('s', song.album)
+                    }
+                else:
+                    return {}
+
+            @property
+            def Volume(self):
+                return self.app.volume / 8.0
+
+            @Volume.setter
+            def Volume(self, volume):
+                volume = max(0, min(volume, 1))
+                self.app.volume = int(volume*8)
+                self.app.player.volume = volume * 100
+                self.PropertiesChanged("org.mpris.MediaPlayer2.tuijam", {"Volume": volume}, [])
+
+            @property
+            def Position(self):
+                try:
+                    return int(1000000 * self.app.player.time_pos)
+                except TypeError:
+                    return 0
+
+            @property
+            def MinimumRate(self):
+                return 1.0
+
+            @property
+            def MaximumRate(self):
+                return 1.0
+
+            @property
+            def CanGoNext(self):
+                return len(self.app.queue_panel.queue) > 0
+
+            @property
+            def CanGoPrevious(self):
+                return False
+
+            @property
+            def CanPlay(self):
+                return (len(self.app.queue_panel.queue) > 0 or self.app.current_song is not None)
+
+            @property
+            def CanPause(self):
+                return self.app.current_song is not None
+
+            @property
+            def CanSeek(self):
+                return self.app.current_song is not None
+
+            @property
+            def CanControl(self):
+                return True
+
+            def Next(self):
+                self.app.queue_panel.play_next()
+
+            def Previous(self):
+                pass
+
+            def Pause(self):
+                if self.app.play_state == 'play':
+                    self.app.toggle_play()
+
+            def PlayPause(self):
+                self.app.toggle_play()
+
+            def Stop(self):
+                self.app.stop()
+
+            def Play(self):
+                self.app.play()
+
+            def Seek(self, offset):
+                pass
+
+            def SetPosition(self, track_id, position):
+                pass
+
+            def OpenUri(self, uri):
+                pass
+
+        self.mpris = MPRIS(self)
+        bus = SessionBus()
+        bus = bus.publish('org.mpris.MediaPlayer2.tuijam',
+                          ('/org/mpris/MediaPlayer2', self.mpris))
 
 
 def main(debug=False):
@@ -883,14 +1089,16 @@ def main(debug=False):
     if not app.login():
         return
 
+    if app.mpris_enabled:
+        app.setup_mpris()
+
     if not debug:
+
         import signal
+        signal.signal(signal.SIGINT, app.cleanup)
 
-        def handle_sigint(sigm, frame):
-            raise urwid.ExitMainLoop()
-        signal.signal(signal.SIGINT, handle_sigint)
-
-        loop = urwid.MainLoop(app, app.palette)
+        loop = urwid.MainLoop(app, palette=app.palette,
+                              event_loop=urwid.GLibEventLoop())
         app.loop = loop
         loop.screen.set_terminal_properties(256)
         try:
@@ -898,7 +1106,7 @@ def main(debug=False):
         except Exception as e:
             logging.exception(e)
             print("Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) for more information.")
-        app.cleanup()
+            app.cleanup()
     return app
 
 
