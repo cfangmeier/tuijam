@@ -32,7 +32,7 @@ an app-password for TUIJam.
 # MPRIS Support
 TUIJam supports a subset of the [MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/) spec to allow for external control via clients such as [playerctl](https://github.com/acrisci/playerctl). Currently, the following behavior is supported:
 
-  - Get current song metatdata (Title/Album/Artist)
+  - Get current song metadata (Title/Album/Artist)
   - Get player status (Playing/Paused/Stopped)
   - Play/Pause current song
   - Next Song
