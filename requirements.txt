@@ -3,3 +3,5 @@ urwid==2.0.1
 PyYAML==3.13
 python-mpv==0.3.6
 scrypt==0.8.0
+PyGObject==3.28.3
+pydbus==0.6.0
