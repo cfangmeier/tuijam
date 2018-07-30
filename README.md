@@ -29,6 +29,21 @@ If this file doesn't exist, TUIJam will guide you through a first-time setup whe
 Note that if you have 2-factor setup on your Google account, you need to make
 an app-password for TUIJam.
 
+# MPRIS Support
+TUIJam supports a subset of the [MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/) spec to allow for external control via clients such as [playerctl](https://github.com/acrisci/playerctl). Currently, the following behavior is supported:
+
+  - Get current song metatdata (Title/Album/Artist)
+  - Get player status (Playing/Paused/Stopped)
+  - Play/Pause current song
+  - Next Song
+  - Stop
+  
+If this causes problems for you, please feel free to create an issue, but this feature can also be disabled by placing the following line in your config file:
+
+```yaml
+mpris_enabled: false 
+```
+
 # Controls
   - `ctrl-c` quit
   - `ctrl-p` toggle play/pause
