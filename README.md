@@ -35,6 +35,8 @@ an app-password for TUIJam.
   - `ctrl-n` move to next song
   - `ctrl-r` view recently played songs
   - `ctrl-s` shuffle queued songs (Note: If this hangs, try running `stty -ixon` in your terminal and restarting `tuijam`)
+  - `ctrl-u` Thumbs up the currently playing song
+  - `ctrl-d` Thumbs down the currently playing song
   - `>` seek forward 10 seconds
   - `<` seek backwards 10 seconds
   - `+` volume up

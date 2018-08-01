@@ -62,16 +62,19 @@ class MusicObject:
 class Song(MusicObject):
     ui_weights = (1, 1, 1, 0.2, 0.2)
 
-    def __init__(self, title, album, albumId, artist, artistId, id_, type_, length, rating):
+    def __init__(self, title, album, albumId, albumArtRef, artist, artistId, id_, type_, trackType, length, rating):
         self.title = title
         self.album = album
         self.albumId = albumId
+        self.albumArtRef = albumArtRef
         self.artist = artist
         self.artistId = artistId
         self.id = id_
         self.type = type_
+        self.trackType = trackType
         self.length = length
         self.rating = rating
+        self.stream_url = ''
 
     def __repr__(self):
         return f'<Song title:{self.title}, album:{self.album}, artist:{self.artist}>'
@@ -97,6 +100,7 @@ class Song(MusicObject):
             title = d['title']
             album = d['album']
             albumId = d['albumId']
+            albumArtRef = d['albumArtRef'][0]['url']
             artist = d['artist']
             artistId = d['artistId'][0]
             try:
@@ -105,13 +109,14 @@ class Song(MusicObject):
             except KeyError:
                 id_ = d['storeId']
                 type_ = 'store'
+            trackType = d.get('trackType', None)
             length = sec_to_min_sec(int(d['durationMillis']) / 1000)
             # rating scheme
             #  0 - No Rating
             #  1 - Thumbs down
             #  5 - Thumbs up
             rating = int(d.get('rating', 0))
-            return Song(title, album, albumId, artist, artistId, id_, type_, length, rating)
+            return Song(title, album, albumId, albumArtRef, artist, artistId, id_, type_, trackType, length, rating)
         except KeyError as e:
             logging.exception(f"Missing Key {e} in dict \n{d}")
             return None
@@ -426,10 +431,14 @@ class PlayBar(urwid.ProgressBar):
         if self.app.current_song is None:
             return 'Idle'
         progress, total = self.get_prog_tot()
-        return ' {} {} - {} [{:02d}:{:02d} / {:02d}:{:02d}] {}'.format(
+        rating = ''
+        if self.app.current_song.rating in (1, 5):
+            rating = '('+RATE_UI[self.app.current_song.rating]+')'
+        return ' {} {} - {} {}[{:02d}:{:02d} / {:02d}:{:02d}] {}'.format(
             '▶' if self.app.play_state == 'play' else '■',
             self.app.current_song.artist,
             self.app.current_song.title,
+            rating,
             progress // 60,
             progress % 60,
             total // 60,
@@ -710,8 +719,8 @@ class App(urwid.Pile):
 
     def play(self, song):
         self.current_song = song
-        url = self.g_api.get_stream_url(song.id)
-        self.player.play(url)
+        self.current_song.stream_url = self.g_api.get_stream_url(song.id)
+        self.player.play(self.current_song.stream_url)
         self.player.pause = False
         self.play_state = 'play'
         self.playbar.update()
@@ -719,8 +728,8 @@ class App(urwid.Pile):
         self.schedule_refresh()
 
     def stop(self):
-        self.current_song = None
         self.player.pause = True
+        self.player.seek(0, reference='absolute')
         self.play_state = 'stop'
         self.playbar.update()
 
@@ -735,7 +744,7 @@ class App(urwid.Pile):
             self.player.pause = True
             self.play_state = 'pause'
             self.playbar.update()
-        elif self.play_state == 'pause':
+        elif (self.play_state == 'pause' or (self.play_state == 'stop' and self.current_song is not None)):
             self.player.pause = False
             self.play_state = 'play'
             self.playbar.update()
@@ -780,6 +789,10 @@ class App(urwid.Pile):
             self.search_panel.update_search_results(self.history, [], [], [], [], [])
         elif key == 'ctrl s':
             self.queue_panel.shuffle()
+        elif key == 'ctrl u':
+            self.rate_current_song(5)
+        elif key == 'ctrl d':
+            self.rate_current_song(1)
         elif key == 'ctrl q':
             raise urwid.ExitMainLoop()
         elif self.focus != self.search_input:
@@ -872,6 +885,20 @@ class App(urwid.Pile):
     def get_radio_songs(self, station_id, n=50):
         song_dicts = self.g_api.get_station_tracks(station_id, num_tracks=n)
         return [Song.from_dict(song_dict) for song_dict in song_dicts]
+
+    def rate_current_song(self, rating):
+        if self.current_song is None:
+            return
+        self.current_song.rating = rating
+        track = {}
+        if self.current_song.type == 'library':
+            track['id'] = self.current_song.id
+        else:
+            track['nid'] = self.current_song.id
+            track['trackType'] = self.current_song.trackType
+        self.g_api.rate_songs(track, rating)
+        self.playbar.update()
+        self.loop.draw_screen()
 
     def cleanup(self, *args, **kwargs):
         self.player.quit()
@@ -989,10 +1016,12 @@ class App(urwid.Pile):
                 song = self.app.current_song
                 if song is not None:
                     return {
-                        'mpris:trackid': Variant('s', song.id),
+                        'mpris:trackid': Variant('o', '/org/tuijam/'+str(song.id)),
+                        'mpris:artUrl': Variant('s', song.albumArtRef),
                         'xesam:title': Variant('s', song.title),
-                        'xesam:artist': Variant('s', song.artist),
-                        'xesam:album': Variant('s', song.album)
+                        'xesam:artist': Variant('as', [song.artist]),
+                        'xesam:album': Variant('s', song.album),
+                        'xesam:url': Variant('s', song.stream_url)
                     }
                 else:
                     return {}
@@ -1063,8 +1092,8 @@ class App(urwid.Pile):
             def Stop(self):
                 self.app.stop()
 
-            def Play(self):
-                self.app.play()
+            def Play(self, song_id):
+                self.app.toggle_play()
 
             def Seek(self, offset):
                 pass
@@ -1082,14 +1111,17 @@ class App(urwid.Pile):
 
 
 def main(debug=False):
+    print("starting up.")
     makedirs(CONFIG_DIR, exist_ok=True)
     log_file = join(CONFIG_DIR, 'log.txt')
     logging.basicConfig(filename=log_file, filemode='w', level=logging.WARNING)
     app = App()
+    print("logging in.")
     if not app.login():
         return
 
     if app.mpris_enabled:
+        print("Enabling external control.")
         app.setup_mpris()
 
     if not debug:
