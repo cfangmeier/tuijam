@@ -793,8 +793,6 @@ class App(urwid.Pile):
             self.rate_current_song(5)
         elif key == 'ctrl d':
             self.rate_current_song(1)
-        elif key == 'ctrl q':
-            raise urwid.ExitMainLoop()
         elif self.focus != self.search_input:
             if key == '>':
                 self.seek(10)
