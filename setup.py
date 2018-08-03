@@ -9,10 +9,15 @@ if sys.version_info < (3, 6):
 with open('requirements.txt') as f:
     requirements = f.readlines()
 
+with open('README.md') as f:
+    desc = f.read()
+
 setup(
     name='tuijam',
-    version='0.1.0',
+    version='0.2.3',
     description='A fancy TUI client for Google Play Music',
+    long_description=desc,
+    long_description_content_type='text/markdown',
     url='https://github.com/cfangmeier/tuijam',
     author='Caleb Fangmeier',
     author_email='caleb@fangmeier.tech',

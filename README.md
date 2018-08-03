@@ -17,6 +17,11 @@ cd tuijam
 python setup.py install --user
 ```
 
+Or from pypi
+```bash
+pip install --user tuijam
+```
+
 # Configuration
 When you first launch TUIJam, it checks for a config file in `$HOME/.config/tuijam/config.yaml` with the following content:
 ```yaml
