@@ -5,6 +5,7 @@ from os import makedirs
 from itertools import zip_longest
 from getpass import getpass
 import sys
+import pickle
 
 import urwid
 import gmusicapi
@@ -643,6 +644,7 @@ class App(urwid.Pile):
                 password = config['password']
                 device_id = config['device_id']
             self.mpris_enabled = config.get('mpris_enabled', True)
+            self.persist_queue = config.get('persist_queue', True)
         return email, password, device_id
 
     def first_time_setup(self):
@@ -689,6 +691,7 @@ class App(urwid.Pile):
                 device_id=device_id
             )
         data['mpris_enabled'] = True
+        data['persist_queue'] = True
         config_file = join(CONFIG_DIR, 'config.yaml')
         with open(config_file, "w") as outfile:
             yaml.dump(data, outfile, default_flow_style=False)
@@ -911,7 +914,26 @@ class App(urwid.Pile):
         del self.player
         self.g_api.logout()
         self.loop.stop()
+        if self.persist_queue:
+            self.save_queue()
         sys.exit()
+
+    def save_queue(self):
+        print("saving queue")
+        queue = []
+        if self.current_song is not None:
+            queue.append(self.current_song)
+        queue.extend(self.queue_panel.queue)
+        with open(join(CONFIG_DIR, 'queue.p'), 'wb') as f:
+            pickle.dump(queue, f)
+
+    def restore_queue(self):
+        if isfile(join(CONFIG_DIR, 'queue.p')):
+            with open(join(CONFIG_DIR, 'queue.p'), 'rb') as f:
+                try:
+                    self.queue_panel.add_songs_to_queue(pickle.load(f))
+                except pickle.UnpicklingError:
+                    print("failed to restore queue. :(")
 
     def setup_mpris(self):
         from pydbus import SessionBus, Variant
@@ -1127,8 +1149,12 @@ def main(debug=False):
         return
 
     if app.mpris_enabled:
-        print("Enabling external control.")
+        print("enabling external control.")
         app.setup_mpris()
+
+    if app.persist_queue:
+        print("restoring queue")
+        app.restore_queue()
 
     if not debug:
 
