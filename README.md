@@ -1,5 +1,5 @@
 # TUIJam
-A fancy TUI client for Google Play Music. 
+A fancy TUI client for Google Play Music.
 
 TUIJam seeks to make a simple, attractive, terminal-based interface to
 listening to music for Google Play Music All-Access subscribers.
@@ -34,6 +34,11 @@ If this file doesn't exist, TUIJam will guide you through a first-time setup whe
 Note that if you have 2-factor setup on your Google account, you need to make
 an app-password for TUIJam.
 
+## Additional Configuration
+
+  - `persist_queue`: (Default: `True`) Saves the current queue and reloads it when the app resumes
+  - `reverse_scrolling`: (Default: `False`) Switches the direction of mouse scrolling
+
 # MPRIS Support
 TUIJam supports a subset of the [MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/) spec to allow for external control via clients such as [playerctl](https://github.com/acrisci/playerctl). Currently, the following behavior is supported:
 
@@ -42,11 +47,11 @@ TUIJam supports a subset of the [MPRIS](https://specifications.freedesktop.org/m
   - Play/Pause current song
   - Next Song
   - Stop
-  
+
 If this causes problems for you, please feel free to create an issue, but this feature can also be disabled by placing the following line in your config file:
 
 ```yaml
-mpris_enabled: false 
+mpris_enabled: false
 ```
 
 # Controls
@@ -63,7 +68,7 @@ mpris_enabled: false
   - `+` volume up
   - `-` volume down
   - `tab`/`shift-tab` cycle focus through search/queue/input windows
-  - In search window, 
+  - In search window,
     - `q` Add selected song/album to queue
     - `r` Create radio station around selected song/album/artist and add 50 songs from it to queue
     - `e` view information about selected song/album/artist

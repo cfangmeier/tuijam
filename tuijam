@@ -645,6 +645,7 @@ class App(urwid.Pile):
                 device_id = config['device_id']
             self.mpris_enabled = config.get('mpris_enabled', True)
             self.persist_queue = config.get('persist_queue', True)
+            self.reverse_scrolling = config.get('reverse_scrolling', False)
         return email, password, device_id
 
     def first_time_setup(self):
@@ -692,6 +693,7 @@ class App(urwid.Pile):
             )
         data['mpris_enabled'] = True
         data['persist_queue'] = True
+        data['reverse_scrolling'] = False
         config_file = join(CONFIG_DIR, 'config.yaml')
         with open(config_file, "w") as outfile:
             yaml.dump(data, outfile, default_flow_style=False)
@@ -811,10 +813,12 @@ class App(urwid.Pile):
             return self.focus.keypress(size, key)
 
     def mouse_event(self, size, event, button, col, row, focus=True):
+        up = 'down' if self.reverse_scrolling else 'up'
+        down = 'up' if self.reverse_scrolling else 'down'
         if button == 5:
-            self.keypress(size, 'up')
+            self.keypress(size, up)
         elif button == 4:
-            self.keypress(size, 'down')
+            self.keypress(size, down)
         else:
             super().mouse_event(size, event, button, col, row, focus=focus)
 
