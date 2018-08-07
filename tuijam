@@ -733,10 +733,11 @@ class App(urwid.Pile):
         self.schedule_refresh()
 
     def stop(self):
-        self.player.pause = True
-        self.player.seek(0, reference='absolute')
-        self.play_state = 'stop'
-        self.playbar.update()
+        if self.play_state != 'stop':
+            self.player.pause = True
+            self.player.seek(0, reference='absolute')
+            self.play_state = 'stop'
+            self.playbar.update()
 
     def seek(self, dt):
         try:
@@ -798,6 +799,8 @@ class App(urwid.Pile):
             self.rate_current_song(5)
         elif key == 'ctrl d':
             self.rate_current_song(1)
+        elif key == 'ctrl w':
+            self.queue_panel.clear()
         elif self.focus != self.search_input:
             if key == '>':
                 self.seek(10)
