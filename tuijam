@@ -88,7 +88,7 @@ class Song(MusicObject):
 
     def ui(self):
         return self.to_ui(self.title, self.album, self.artist,
-                          '{:02d}:{:02d}'.format(*self.length), RATE_UI[self.rating],
+                          '{:d}:{:02d}'.format(*self.length), RATE_UI[self.rating],
                           weights=self.ui_weights)
 
     @classmethod
@@ -435,7 +435,7 @@ class PlayBar(urwid.ProgressBar):
         rating = ''
         if self.app.current_song.rating in (1, 5):
             rating = '('+RATE_UI[self.app.current_song.rating]+')'
-        return ' {} {} - {} {}[{:02d}:{:02d} / {:02d}:{:02d}] {}'.format(
+        return ' {} {} - {} {}[{:d}:{:02d} / {:d}:{:02d}] {}'.format(
             '▶' if self.app.play_state == 'play' else '■',
             self.app.current_song.artist,
             self.app.current_song.title,
@@ -513,6 +513,7 @@ class QueuePanel(urwid.ListBox):
             self.walker.pop(0)
             self.app.play(self.queue.pop(0))
         else:
+            self.app.current_song = None
             self.app.stop()
 
     def selected_queue_obj(self):
@@ -733,17 +734,20 @@ class App(urwid.Pile):
         self.schedule_refresh()
 
     def stop(self):
-        if self.play_state != 'stop':
+        try:
             self.player.pause = True
             self.player.seek(0, reference='absolute')
-            self.play_state = 'stop'
-            self.playbar.update()
+        except SystemError:  # seek throws error if there is no current song in mpv
+            pass
+        self.play_state = 'stop'
+        self.playbar.update()
 
     def seek(self, dt):
         try:
             self.player.seek(dt)
         except SystemError:
             pass
+        self.playbar.update()
 
     def toggle_play(self):
         if self.play_state == 'play':
@@ -905,6 +909,8 @@ class App(urwid.Pile):
     def rate_current_song(self, rating):
         if self.current_song is None:
             return
+        if self.current_song.rating == rating:
+            rating = 0
         self.current_song.rating = rating
         track = {}
         if self.current_song.type == 'library':
