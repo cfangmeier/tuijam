@@ -791,7 +791,7 @@ class App(urwid.Pile):
                 self.set_focus(self.queue_panel_wrapped)
         elif key == 'ctrl p':
             self.toggle_play()
-        elif key == 'ctrl q':
+        elif key == 'ctrl k':
             self.stop()
         elif key == 'ctrl n':
             self.queue_panel.play_next()
@@ -805,6 +805,8 @@ class App(urwid.Pile):
             self.rate_current_song(1)
         elif key == 'ctrl w':
             self.queue_panel.clear()
+        elif key == 'ctrl q':
+            self.queue_panel.add_songs_to_queue(self.search_panel.search_results[0])
         elif self.focus != self.search_input:
             if key == '>':
                 self.seek(10)
@@ -879,11 +881,15 @@ class App(urwid.Pile):
         situations = self.g_api.get_listen_now_situations()
         items = self.g_api.get_listen_now_items()
         playlists = self.g_api.get_all_user_playlist_contents()
+        liked = self.g_api.get_promoted_songs()
 
         situations = [Situation.from_dict(hit) for hit in situations]
         albums = [Album.from_dict(hit['album']) for hit in items if 'album' in hit]
         radio_stations = [RadioStation.from_dict(hit['radio_station']) for hit in items if 'radio_station' in hit]
         playlists = [Playlist.from_dict(playlist) for playlist in playlists]
+
+        liked = [Song.from_dict(song) for song in liked]
+        playlists.append(Playlist('Liked', liked, None))
 
         self.search_panel.update_search_results([], albums, [], situations, radio_stations, playlists)
         self.set_focus(self.search_panel_wrapped)
