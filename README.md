@@ -57,7 +57,8 @@ mpris_enabled: false
 # Controls
   - `ctrl-c` quit
   - `ctrl-p` toggle play/pause
-  - `ctrl-q` stop
+  - `ctrl-k` stop
+  - `ctrl-q` add all songs in search result to queue
   - `ctrl-n` move to next song
   - `ctrl-r` view recently played songs
   - `ctrl-w` Clear the current queue
