@@ -26,9 +26,9 @@ WELCOME = '''
 CONFIG_DIR = join(expanduser('~'), '.config', 'tuijam')
 
 RATE_UI = {
-    0: '－',
-    1: '👎',
-    5: '👍',
+    0: '-',
+    1: '▲',
+    5: '▼',
 }
 
 
@@ -272,7 +272,7 @@ class RadioStation(MusicObject):
 
 
 class Playlist(MusicObject):
-    ui_weights = (.2, 1)
+    ui_weights = (.4, 1)
 
     def __init__(self, name, songs=None, id_=None):
         self.name = name
@@ -554,17 +554,17 @@ class QueuePanel(urwid.ListBox):
 class App(urwid.Pile):
 
     palette = [
-        ('header', 'white,underline', 'black'),
-        ('header_bg', 'white', 'black'),
-        ('line', 'white', ''),
-        ('search normal', 'white', ''),
-        ('search select', '', '', '', 'white', '#D32'),
+        ('header',             '', '', '', '#FFF,underline', ''),
+        ('header_bg',          '', '', '', '#FFF',           ''),
+        ('line',               '', '', '', '#FFF',           '',),
+        ('search normal',      '', '', '', '#FFF',           ''),
+        ('search select',      '', '', '', '#FFF',           '#D32'),
 
-        ('region_bg normal', '', ''),
-        ('region_bg select', '', 'black'),
+        ('region_bg normal',   '', '', '', '#888',           ''),
+        ('region_bg select',   '', '', '', '#FFF',           ''),
 
-        ('progress', '', '', '', '#FFF', '#F54'),
-        ('progress_remaining', '', '', '', '#FFF', '#444'),
+        ('progress',           '', '', '', '#FFF',           '#D32'),
+        ('progress_remaining', '', '', '', '#FFF',           '#444'),
     ]
 
     def __init__(self):
