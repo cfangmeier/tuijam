@@ -27,8 +27,8 @@ CONFIG_DIR = join(expanduser('~'), '.config', 'tuijam')
 
 RATE_UI = {
     0: '-',
-    1: '▲',
-    5: '▼',
+    1: '▼',
+    5: '▲',
 }
 
 
