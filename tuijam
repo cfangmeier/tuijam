@@ -628,10 +628,11 @@ class App(urwid.Pile):
             config = yaml.load(f.read())
             if config['encrypted']:
                 from scrypt import decrypt
-                try:
+                if self.config_pw is not None:
                     config_pw = self.config_pw  # From first_time_setup
-                except AttributeError:
+                else:
                     config_pw = getpass("Enter tuijam config pw: ")
+
                 try:
                     email = decrypt(config['email'], config_pw, maxtime=20)
                     password = decrypt(config['password'], config_pw, maxtime=20)
@@ -733,6 +734,10 @@ class App(urwid.Pile):
         self.history.append(song)
         self.schedule_refresh()
 
+        if self.mpris_enabled:
+            self.mpris.emit_property_changed("PlaybackStatus")
+            self.mpris.emit_property_changed("Metadata")
+
     def stop(self):
         try:
             self.player.pause = True
@@ -741,6 +746,9 @@ class App(urwid.Pile):
             pass
         self.play_state = 'stop'
         self.playbar.update()
+
+        if self.mpris_enabled:
+            self.mpris.emit_property_changed("PlaybackStatus")
 
     def seek(self, dt):
         try:
@@ -762,15 +770,24 @@ class App(urwid.Pile):
         elif self.play_state == 'stop':
             self.queue_panel.play_next()
 
+        if self.mpris_enabled:
+            self.mpris.emit_property_changed("PlaybackStatus")
+
     def volume_down(self):
         self.volume = max([0, self.volume-1])
         self.player.volume = int(self.volume * 100 / 8)
         self.playbar.update()
 
+        if self.mpris_enabled:
+            self.mpris.emit_property_changed("Volume")
+
     def volume_up(self):
         self.volume = min([8, self.volume+1])
         self.player.volume = int(self.volume * 100 / 8)
         self.playbar.update()
+
+        if self.mpris_enabled:
+            self.mpris.emit_property_changed("Volume")
 
     def keypress(self, size, key):
         if key == 'tab':
@@ -974,7 +991,7 @@ class App(urwid.Pile):
   <interface name="org.mpris.MediaPlayer2.Player">
     <property name="PlaybackStatus" type="s" access="read" />
     <property name="Rate" type="d" access="readwrite" />
-    <property name="Metadata" type="a{sv}" access="read" />
+    <property name="Metadata" type="a{sv}" access="read"/>
     <property name="Volume" type="d" access="readwrite" />
     <property name="Position" type="x" access="read" />
     <property name="MinimumRate" type="d" access="readwrite" />
@@ -1011,6 +1028,12 @@ class App(urwid.Pile):
 
             def __init__(self, app):
                 self.app = app
+
+
+            def emit_property_changed(self, attr):
+                self.PropertiesChanged(
+                    "org.mpris.MediaPlayer2.Player",
+                    {attr: getattr(self, attr)}, [])
 
             @property
             def CanQuit(self):
@@ -1082,7 +1105,7 @@ class App(urwid.Pile):
                 volume = max(0, min(volume, 1))
                 self.app.volume = int(volume*8)
                 self.app.player.volume = volume * 100
-                self.PropertiesChanged("org.mpris.MediaPlayer2.tuijam", {"Volume": volume}, [])
+                self.emit_property_changed("Volume")
 
             @property
             def Position(self):
