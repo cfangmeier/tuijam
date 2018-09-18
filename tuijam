@@ -806,8 +806,6 @@ class App(urwid.Pile):
                 self.set_focus(self.search_panel_wrapped)
             else:
                 self.set_focus(self.queue_panel_wrapped)
-        if key == '/':
-            self.set_focus(self.search_input)
         elif key == 'ctrl p':
             self.toggle_play()
         elif key == 'ctrl k':
@@ -835,6 +833,8 @@ class App(urwid.Pile):
                 self.volume_down()
             elif key in '+=':
                 self.volume_up()
+            elif key == '/':
+                self.set_focus(self.search_input)
             else:
                 return self.focus.keypress(size, key)
         else:
