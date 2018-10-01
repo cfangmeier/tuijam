@@ -1088,7 +1088,7 @@ class App(urwid.Pile):
                 song = self.app.current_song
                 if song is not None:
                     return {
-                        'mpris:trackid': Variant('o', '/org/tuijam/'+str(song.id)),
+                        'mpris:trackid': Variant('o', '/org/tuijam/'+str(song.id).replace('-', '_')),
                         'mpris:artUrl': Variant('s', song.albumArtRef),
                         'xesam:title': Variant('s', song.title),
                         'xesam:artist': Variant('as', [song.artist]),
