@@ -3,6 +3,7 @@
 from os.path import join, expanduser, isfile
 from os import makedirs
 from itertools import zip_longest
+from collections import deque
 from getpass import getpass
 import sys
 import pickle
@@ -329,7 +330,7 @@ class SearchPanel(urwid.ListBox):
     def __init__(self, app):
         self.app = app
         self.walker = urwid.SimpleFocusListWalker([])
-        self.history = []
+        self.search_history = []
         self.search_results = ([], [], [], [], [], [])
         super().__init__(self.walker)
 
@@ -364,16 +365,16 @@ class SearchPanel(urwid.ListBox):
             super().keypress(size, key)
 
     def back(self):
-        if self.history:
-            prev_focus, history = self.history.pop()
-            self.set_search_results(*history)
+        if self.search_history:
+            prev_focus, search_history = self.search_history.pop()
+            self.set_search_results(*search_history)
             try:
                 self.set_focus(prev_focus)
             except IndexError:
                 pass
 
     def update_search_results(self, songs, albums, artists, situations, radio_stations, playlists):
-        self.history.append((self.get_focus()[1], self.search_results))
+        self.search_history.append((self.get_focus()[1], self.search_results))
         self.set_search_results(songs, albums, artists, situations, radio_stations, playlists)
 
     def set_search_results(self, songs, albums, artists, situations, radio_stations, playlists):
@@ -606,7 +607,7 @@ class App(urwid.Pile):
 
         self.play_state = 'stop'
         self.current_song = None
-        self.history = []
+        self.history = deque([], 100)
 
     def login(self):
         self.g_api = gmusicapi.Mobileclient(debug_logging=False)
@@ -954,6 +955,7 @@ class App(urwid.Pile):
         self.loop.stop()
         if self.persist_queue:
             self.save_queue()
+        self.save_hist()
         sys.exit()
 
     def save_queue(self):
@@ -964,14 +966,26 @@ class App(urwid.Pile):
         queue.extend(self.queue_panel.queue)
         with open(join(CONFIG_DIR, 'queue.p'), 'wb') as f:
             pickle.dump(queue, f)
+        with open(join(CONFIG_DIR, 'hist.p'), 'wb') as f:
+            pickle.dump(self.history, f)
 
     def restore_queue(self):
-        if isfile(join(CONFIG_DIR, 'queue.p')):
+        try:
             with open(join(CONFIG_DIR, 'queue.p'), 'rb') as f:
-                try:
-                    self.queue_panel.add_songs_to_queue(pickle.load(f))
-                except pickle.UnpicklingError:
-                    print("failed to restore queue. :(")
+                self.queue_panel.add_songs_to_queue(pickle.load(f))
+        except (FileNotFoundError, pickle.UnpicklingError):
+            print("failed to restore queue. :(")
+
+    def save_hist(self):
+        with open(join(CONFIG_DIR, 'hist.p'), 'wb') as f:
+            pickle.dump(self.history, f)
+
+    def restore_hist(self):
+        try:
+            with open(join(CONFIG_DIR, 'hist.p'), 'rb') as f:
+                self.history = pickle.load(f)
+        except (FileNotFoundError, pickle.UnpicklingError):
+            print("failed to restore recently played. :(")
 
     def setup_mpris(self):
         from pydbus import SessionBus, Variant
@@ -1199,6 +1213,7 @@ def main(debug=False):
     if app.persist_queue:
         print("restoring queue")
         app.restore_queue()
+    app.restore_hist()
 
     if not debug:
 
