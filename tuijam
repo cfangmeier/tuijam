@@ -124,6 +124,45 @@ class Song(MusicObject):
             return None
 
 
+class YTVideo(MusicObject):
+    ui_weights = (4, 1)
+
+    def __init__(self, title, channel, thumbnail, id_):
+        self.title = title
+        self.channel = channel
+        self.thumbnail = thumbnail
+        self.id = id_
+        self.stream_url = ''
+
+    def __repr__(self):
+        return f'<YTVideo title:{self.title}, channel:{self.artist}>'
+
+    def __str__(self):
+        return f'{self.title} by {self.channel}'
+
+    def fmt_str(self):
+        return [('np_song', f'{self.title} '), 'by ', ('np_artist', f'{self.channel}')]
+
+    def ui(self):
+        return self.to_ui(self.title, self.channel, weights=self.ui_weights)
+
+    @classmethod
+    def header(cls):
+        return MusicObject.header_ui('Youtube', 'Channel', weights=cls.ui_weights)
+
+    @staticmethod
+    def from_dict(d):
+        try:
+            title = d['snippet']['title']
+            thumbnail = d['snippet']['thumbnails']['medium']['url']
+            channel = d['snippet']['channelTitle']
+            id_ = d['id']['videoId']
+            return YTVideo(title, channel, thumbnail, id_)
+        except KeyError as e:
+            logging.exception(f"Missing Key {e} in dict \n{d}")
+            return None
+
+
 class Album(MusicObject):
 
     def __init__(self, title, artist, artistId, year, id_):
@@ -342,6 +381,8 @@ class SearchPanel(urwid.ListBox):
             if selected:
                 if type(selected) == Song:
                     self.app.queue_panel.add_song_to_queue(selected)
+                elif type(selected) == YTVideo:
+                    self.app.queue_panel.add_song_to_queue(selected)
                 elif type(selected) == Album:
                     self.app.queue_panel.add_album_to_queue(selected)
                 elif type(selected) == RadioStation:
@@ -373,22 +414,26 @@ class SearchPanel(urwid.ListBox):
             except IndexError:
                 pass
 
-    def update_search_results(self, songs, albums, artists, situations, radio_stations, playlists):
+    def update_search_results(self, songs, albums, artists, situations, radio_stations, playlists, yt_vids):
         self.search_history.append((self.get_focus()[1], self.search_results))
-        self.set_search_results(songs, albums, artists, situations, radio_stations, playlists)
+        self.set_search_results(songs, albums, artists, situations, radio_stations, playlists, yt_vids)
 
-    def set_search_results(self, songs, albums, artists, situations, radio_stations, playlists):
-        songs = [obj for obj in songs if obj is not None]
-        albums = [obj for obj in albums if obj is not None]
-        artists = [obj for obj in artists if obj is not None]
-        situations = [obj for obj in situations if obj is not None]
-        radio_stations = [obj for obj in radio_stations if obj is not None]
-        playlists = [obj for obj in playlists if obj is not None]
-        self.search_results = (songs, albums, artists, situations, radio_stations, playlists)
+    def set_search_results(self, songs, albums, artists, situations, radio_stations, playlists, yt_vids):
+
+        def filter_none(lst):
+            return [obj for obj in lst if obj is not None][:30]
+        songs = filter_none(songs)
+        albums = filter_none(albums)
+        artists = filter_none(artists)
+        situations = filter_none(situations)
+        radio_stations = filter_none(radio_stations)
+        playlists = filter_none(playlists)
+        yt_vids = filter_none(yt_vids)
+        self.search_results = (songs, albums, artists, situations, radio_stations, playlists, yt_vids)
 
         self.walker.clear()
 
-        for group in [artists, albums, songs, situations, radio_stations, playlists]:
+        for group in [artists, albums, songs, situations, radio_stations, playlists, yt_vids]:
             if group:
                 self.walker.append(type(group[0]).header())
             for item in group:
@@ -399,10 +444,10 @@ class SearchPanel(urwid.ListBox):
 
     def selected_search_obj(self):
         focus_id = self.walker.get_focus()[1]
-        songs, albums, artists, situations, radio_stations, playlists = self.search_results
+        songs, albums, artists, situations, radio_stations, playlists, yt_vids = self.search_results
 
         try:
-            for group in [artists, albums, songs, situations, radio_stations, playlists]:
+            for group in [artists, albums, songs, situations, radio_stations, playlists, yt_vids]:
                 if group:
                     focus_id -= 1
                     if focus_id < len(group):
@@ -433,19 +478,30 @@ class PlayBar(urwid.ProgressBar):
         if self.app.current_song is None:
             return 'Idle'
         progress, total = self.get_prog_tot()
+        song = self.app.current_song
         rating = ''
-        if self.app.current_song.rating in (1, 5):
-            rating = '('+RATE_UI[self.app.current_song.rating]+')'
-        return ' {} {} - {} {}[{:d}:{:02d} / {:d}:{:02d}] {}'.format(
+        if self.app.video == 'auto':
+            video = '🎵+'
+        else:
+            video = '🎵'
+        if type(song) == Song:
+            artist = song.artist
+            if song.rating in (1, 5):
+                rating = '('+RATE_UI[song.rating]+')'
+        else:  # YTVideo
+            artist = song.channel
+
+        return ' {} {} - {} {}[{:d}:{:02d} / {:d}:{:02d}] {} {}'.format(
             '▶' if self.app.play_state == 'play' else '■',
-            self.app.current_song.artist,
+            artist,
             self.app.current_song.title,
             rating,
             progress // 60,
             progress % 60,
             total // 60,
             total % 60,
-            self.vol_inds[self.app.volume]
+            self.vol_inds[self.app.volume],
+            video,
         )
 
     def update(self):
@@ -572,6 +628,7 @@ class App(urwid.Pile):
 
         import mpv
         self.player = mpv.MPV()
+        self.video = 'no'
         self.player.volume = 100
         self.volume = 8
         self.g_api = None
@@ -579,9 +636,16 @@ class App(urwid.Pile):
         self.config_pw = None
 
         @self.player.event_callback('end_file')
-        def callback(event):
+        def end_file_callback(event):
             if event['event']['reason'] == 0:
                 self.queue_panel.play_next()
+
+        # TODO: catch event for attempting to close video window and make it just
+        # disable video and move to next track
+        # @self.player.event_callback('end_file')
+        # def win_close_callback(event):
+        #     if event['event']['reason'] == 0:
+        #         self.queue_panel.play_next()
 
         self.search_panel = SearchPanel(self)
         search_panel_wrapped = urwid.LineBox(self.search_panel, title='Search Results')
@@ -727,7 +791,12 @@ class App(urwid.Pile):
 
     def play(self, song):
         self.current_song = song
-        self.current_song.stream_url = self.g_api.get_stream_url(song.id)
+        self.player.pause = True
+        self.player['vid'] = self.video
+        if type(song) == Song:
+            self.current_song.stream_url = self.g_api.get_stream_url(song.id)
+        else:  # YTVideo
+            self.current_song.stream_url = f'https://youtu.be/{song.id}'
         self.player.play(self.current_song.stream_url)
         self.player.pause = False
         self.play_state = 'play'
@@ -774,6 +843,22 @@ class App(urwid.Pile):
         if self.mpris_enabled:
             self.mpris.emit_property_changed("PlaybackStatus")
 
+    def toggle_video(self):
+        '''
+        This is a bit tricky because we need to get mpv to reinitialize its
+        core after changeing the 'vid' setting.
+        '''
+        # current_time = self.player.time_pos
+        self.player.command('stop')
+        if self.video == 'no':
+            self.video = 'auto'
+        else:
+            self.video = 'no'
+        self.player['vid'] = self.video
+        self.player.play(self.current_song.stream_url)
+        self.player.pause = False
+        # self.player.seek(current_time, 'absolute')
+
     def volume_down(self):
         self.volume = max([0, self.volume-1])
         self.player.volume = int(self.volume * 100 / 8)
@@ -814,7 +899,7 @@ class App(urwid.Pile):
         elif key == 'ctrl n':
             self.queue_panel.play_next()
         elif key == 'ctrl r':
-            self.search_panel.update_search_results(self.history, [], [], [], [], [])
+            self.search_panel.update_search_results(self.history, [], [], [], [], [], [])
         elif key == 'ctrl s':
             self.queue_panel.shuffle()
         elif key == 'ctrl u':
@@ -825,6 +910,8 @@ class App(urwid.Pile):
             self.queue_panel.clear()
         elif key == 'ctrl q':
             self.queue_panel.add_songs_to_queue(self.search_panel.search_results[0])
+        elif key == 'ctrl v':
+            self.toggle_video()
         elif self.focus != self.search_input:
             if key == '>':
                 self.seek(10)
@@ -855,7 +942,7 @@ class App(urwid.Pile):
         if obj is None:
             return
 
-        songs, albums, artists, situations, radio_stations, playlists = [[]]*6
+        songs, albums, artists, situations, radio_stations, playlists, yt_vids = [[]]*7
         if type(obj) == Song:
             album_info = self.g_api.get_album_info(obj.albumId)
 
@@ -885,7 +972,36 @@ class App(urwid.Pile):
         elif type(obj) == Playlist:
             songs = obj.songs
             playlists = [obj]
-        self.search_panel.update_search_results(songs, albums, artists, situations, radio_stations, playlists)
+        elif type(obj) == YTVideo:
+            yt_vids = [obj]
+        self.search_panel.update_search_results(songs, albums, artists, situations, radio_stations, playlists, yt_vids)
+
+    def youtube_search(self, q, max_results=50, order="relevance", token=None, location=None, location_radius=None):
+        '''
+        Mostly stolen from: https://github.com/spnichol/youtube_tutorial/blob/master/youtube_videos.py
+        '''
+        from apiclient.discovery import build
+        developer_key = "AIzaSyBtETg1PDC124WUAZ5JhJH_pu2xboHVIS0"
+
+        youtube = build('youtube', 'v3', developerKey=developer_key)
+
+        search_response = youtube.search().list(
+            q=q,
+            type="video",
+            pageToken=token,
+            order = order,
+            part="id,snippet",
+            maxResults=max_results,
+            location=location,
+            locationRadius=location_radius
+        ).execute()
+
+        videos = []
+        for search_result in search_response.get("items", []):
+            if search_result["id"]["kind"] == "youtube#video":
+                videos.append(search_result)
+        nexttok = search_response.get("nextPageToken", None)
+        return (nexttok, videos)
 
     def search(self, query):
         results = self.g_api.search(query)
@@ -893,8 +1009,9 @@ class App(urwid.Pile):
         songs = [Song.from_dict(hit['track']) for hit in results['song_hits']]
         albums = [Album.from_dict(hit['album']) for hit in results['album_hits']]
         artists = [Artist.from_dict(hit['artist']) for hit in results['artist_hits']]
+        ytvids = [YTVideo.from_dict(hit) for hit in self.youtube_search(query)[1]]
 
-        self.search_panel.update_search_results(songs, albums, artists, [], [], [])
+        self.search_panel.update_search_results(songs, albums, artists, [], [], [], ytvids)
         self.set_focus(self.search_panel_wrapped)
 
     def listen_now(self):
@@ -911,7 +1028,7 @@ class App(urwid.Pile):
         liked = [Song.from_dict(song) for song in liked]
         playlists.append(Playlist('Liked', liked, None))
 
-        self.search_panel.update_search_results([], albums, [], situations, radio_stations, playlists)
+        self.search_panel.update_search_results([], albums, [], situations, radio_stations, playlists, [])
         self.set_focus(self.search_panel_wrapped)
 
     def create_radio_station(self, obj):
@@ -1039,12 +1156,10 @@ class App(urwid.Pile):
   </interface>
 </node>
             """
-            #  TODO: Decide which properties should get wired up to this signal
             PropertiesChanged = signal()
 
             def __init__(self, app):
                 self.app = app
-
 
             def emit_property_changed(self, attr):
                 self.PropertiesChanged(
@@ -1100,13 +1215,22 @@ class App(urwid.Pile):
             @property
             def Metadata(self):
                 song = self.app.current_song
-                if song is not None:
+                if type(song) == Song:
                     return {
                         'mpris:trackid': Variant('o', '/org/tuijam/'+str(song.id).replace('-', '_')),
                         'mpris:artUrl': Variant('s', song.albumArtRef),
                         'xesam:title': Variant('s', song.title),
                         'xesam:artist': Variant('as', [song.artist]),
                         'xesam:album': Variant('s', song.album),
+                        'xesam:url': Variant('s', song.stream_url)
+                    }
+                elif type(song) == YTVideo:
+                    return {
+                        'mpris:trackid': Variant('o', '/org/tuijam/'+str(song.id)),
+                        'mpris:artUrl': Variant('s', song.thumbnail),
+                        'xesam:title': Variant('s', song.title),
+                        'xesam:artist': Variant('as', [song.channel]),
+                        'xesam:album': Variant('s', ''),
                         'xesam:url': Variant('s', song.stream_url)
                     }
                 else:
