@@ -62,7 +62,7 @@ class MusicObject:
 
 
 class Song(MusicObject):
-    ui_weights = (1, 1, 1, 0.2, 0.2)
+    ui_weights = (1, 2, 1, 0.2, 0.2)
 
     def __init__(self, title, album, albumId, albumArtRef, artist, artistId, id_, type_, trackType, length, rating):
         self.title = title
@@ -1228,7 +1228,7 @@ class App(urwid.Pile):
                     }
                 elif type(song) == YTVideo:
                     return {
-                        'mpris:trackid': Variant('o', '/org/tuijam/YT_'+str(song.id)),
+                        'mpris:trackid': Variant('o', '/org/tuijam/YT_'+str(song.id).replace('-', '_')),
                         'mpris:artUrl': Variant('s', song.thumbnail),
                         'xesam:title': Variant('s', song.title),
                         'xesam:artist': Variant('as', [song.channel]),
