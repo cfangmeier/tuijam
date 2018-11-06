@@ -9,6 +9,7 @@ listening to music for Google Play Music All-Access subscribers.
 # Dependencies
 * [Python >= 3.6](https://www.python.org/downloads)
 * [mpv](https://mpv.io)
+* [youtube-dl](https://rg3.github.io/youtube-dl/)
 
 # Installation
 ```bash
@@ -53,6 +54,13 @@ If this causes problems for you, please feel free to create an issue, but this f
 ```yaml
 mpris_enabled: false
 ```
+# Youtube
+From version 0.3.0, Youtube videos are included in search results. By default, no video is shown during playback, but this can be changed by adding the following line to the config file:
+
+```yaml
+video: true
+```
+
 
 # Controls
   - `ctrl-c` quit
