@@ -480,10 +480,6 @@ class PlayBar(urwid.ProgressBar):
         progress, total = self.get_prog_tot()
         song = self.app.current_song
         rating = ''
-        if self.app.video == 'auto':
-            video = '🎵+'
-        else:
-            video = '🎵'
         if type(song) == Song:
             artist = song.artist
             if song.rating in (1, 5):
@@ -491,7 +487,7 @@ class PlayBar(urwid.ProgressBar):
         else:  # YTVideo
             artist = song.channel
 
-        return ' {} {} - {} {}[{:d}:{:02d} / {:d}:{:02d}] {} {}'.format(
+        return ' {} {} - {} {}[{:d}:{:02d} / {:d}:{:02d}] {}'.format(
             '▶' if self.app.play_state == 'play' else '■',
             artist,
             self.app.current_song.title,
@@ -501,7 +497,6 @@ class PlayBar(urwid.ProgressBar):
             total // 60,
             total % 60,
             self.vol_inds[self.app.volume],
-            video,
         )
 
     def update(self):
@@ -628,8 +623,8 @@ class App(urwid.Pile):
 
         import mpv
         self.player = mpv.MPV()
-        self.video = 'no'
         self.player.volume = 100
+        self.player['vid'] = 'no'
         self.volume = 8
         self.g_api = None
         self.loop = None
@@ -639,13 +634,6 @@ class App(urwid.Pile):
         def end_file_callback(event):
             if event['event']['reason'] == 0:
                 self.queue_panel.play_next()
-
-        # TODO: catch event for attempting to close video window and make it just
-        # disable video and move to next track
-        # @self.player.event_callback('end_file')
-        # def win_close_callback(event):
-        #     if event['event']['reason'] == 0:
-        #         self.queue_panel.play_next()
 
         self.search_panel = SearchPanel(self)
         search_panel_wrapped = urwid.LineBox(self.search_panel, title='Search Results')
@@ -713,6 +701,7 @@ class App(urwid.Pile):
             self.mpris_enabled = config.get('mpris_enabled', True)
             self.persist_queue = config.get('persist_queue', True)
             self.reverse_scrolling = config.get('reverse_scrolling', False)
+            self.video = config.get('video', False)
         return email, password, device_id
 
     def first_time_setup(self):
@@ -761,6 +750,7 @@ class App(urwid.Pile):
         data['mpris_enabled'] = True
         data['persist_queue'] = True
         data['reverse_scrolling'] = False
+        data['video'] = False
         config_file = join(CONFIG_DIR, 'config.yaml')
         with open(config_file, "w") as outfile:
             yaml.dump(data, outfile, default_flow_style=False)
@@ -792,7 +782,6 @@ class App(urwid.Pile):
     def play(self, song):
         self.current_song = song
         self.player.pause = True
-        self.player['vid'] = self.video
         if type(song) == Song:
             self.current_song.stream_url = self.g_api.get_stream_url(song.id)
         else:  # YTVideo
@@ -842,23 +831,6 @@ class App(urwid.Pile):
 
         if self.mpris_enabled:
             self.mpris.emit_property_changed("PlaybackStatus")
-
-    def toggle_video(self):
-        '''
-        This is a bit tricky because we need to get mpv to reinitialize its
-        core after changeing the 'vid' setting.
-        '''
-        # current_time = self.player.time_pos
-        self.player.command('stop')
-        if self.video == 'no':
-            self.video = 'auto'
-        else:
-            self.video = 'no'
-        self.player['vid'] = self.video
-        if self.current_song:
-            self.player.play(self.current_song.stream_url)
-            self.player.pause = False
-        # self.player.seek(current_time, 'absolute')
 
     def volume_down(self):
         self.volume = max([0, self.volume-1])
@@ -911,8 +883,6 @@ class App(urwid.Pile):
             self.queue_panel.clear()
         elif key == 'ctrl q':
             self.queue_panel.add_songs_to_queue(self.search_panel.search_results[0])
-        elif key == 'ctrl v':
-            self.toggle_video()
         elif self.focus != self.search_input:
             if key == '>':
                 self.seek(10)
@@ -1339,6 +1309,9 @@ def main(debug=False):
     if app.persist_queue:
         print("restoring queue")
         app.restore_queue()
+
+    if app.video:
+        app.player['vid'] = 'auto'
     app.restore_hist()
 
     if not debug:
