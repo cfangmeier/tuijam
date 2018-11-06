@@ -635,6 +635,10 @@ class App(urwid.Pile):
             if event['event']['reason'] == 0:
                 self.queue_panel.play_next()
 
+        @self.player.on_key_press('CLOSE_WIN')
+        def winclose_callback():
+            pass
+
         self.search_panel = SearchPanel(self)
         search_panel_wrapped = urwid.LineBox(self.search_panel, title='Search Results')
         search_panel_wrapped = urwid.AttrMap(search_panel_wrapped, 'region_bg normal', 'region_bg select')
