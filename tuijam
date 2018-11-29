@@ -554,8 +554,8 @@ class QueuePanel(urwid.ListBox):
             self.walker[idx1], self.walker[idx2] = ui2, ui1
 
     def shuffle(self):
-        from random import shuffle as rshuffle
-        rshuffle(self.queue)
+        from random import shuffle
+        shuffle(self.queue)
         self.walker.clear()
         for s in self.queue:
             self.walker.append(s.ui())
@@ -634,10 +634,6 @@ class App(urwid.Pile):
         def end_file_callback(event):
             if event['event']['reason'] == 0:
                 self.queue_panel.play_next()
-
-        @self.player.on_key_press('CLOSE_WIN')
-        def winclose_callback():
-            pass
 
         self.search_panel = SearchPanel(self)
         search_panel_wrapped = urwid.LineBox(self.search_panel, title='Search Results')
@@ -876,7 +872,9 @@ class App(urwid.Pile):
         elif key == 'ctrl n':
             self.queue_panel.play_next()
         elif key == 'ctrl r':
-            self.search_panel.update_search_results(self.history, [], [], [], [], [], [])
+            hist_songs = [item for item in self.history if type(item) == Song]
+            hist_yt = [item for item in self.history if type(item) == YTVideo]
+            self.search_panel.update_search_results(hist_songs, [], [], [], [], [], hist_yt)
         elif key == 'ctrl s':
             self.queue_panel.shuffle()
         elif key == 'ctrl u':
