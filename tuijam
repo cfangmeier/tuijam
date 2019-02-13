@@ -370,7 +370,7 @@ class SearchPanel(urwid.ListBox):
         self.app = app
         self.walker = urwid.SimpleFocusListWalker([])
         self.search_history = []
-        self.search_results = ([], [], [], [], [], [])
+        self.search_results = ([], [], [], [], [], [], [])
         super().__init__(self.walker)
 
         self.walker.append(urwid.Text(WELCOME, align='center'))
