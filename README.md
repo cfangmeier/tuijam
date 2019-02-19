@@ -12,15 +12,21 @@ listening to music for Google Play Music All-Access subscribers.
 * [youtube-dl](https://rg3.github.io/youtube-dl/)
 
 # Installation
+To install from source
 ```bash
 git clone git@github.com:cfangmeier/tuijam.git
 cd tuijam
 python setup.py install --user
 ```
 
-Or from pypi
+or from pypi
 ```bash
 pip install --user tuijam
+```
+
+or from the AUR
+```bash
+yay -S tuijam
 ```
 
 # Configuration
