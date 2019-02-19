@@ -27,9 +27,12 @@ WELCOME = '''
 CONFIG_DIR = join(expanduser('~'), '.config', 'tuijam')
 
 RATE_UI = {
-    0: '-',
-    1: '▼',
-    5: '▲',
+    0: '-',  # No rating
+    1: '▼',  # Thumbs down
+    2: '▼',  # Legacy
+    3: '-',  # Legacy
+    4: '▲',  # Legacy
+    5: '▲',  # Thumbs up
 }
 
 
