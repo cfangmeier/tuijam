@@ -374,6 +374,8 @@ class SearchPanel(urwid.ListBox):
         self.walker = urwid.SimpleFocusListWalker([])
         self.search_history = []
         self.search_results = ([], [], [], [], [], [], [])
+        self.line_box = None
+        self.viewing_previous_songs = False
         super().__init__(self.walker)
 
         self.walker.append(urwid.Text(WELCOME, align='center'))
@@ -412,14 +414,26 @@ class SearchPanel(urwid.ListBox):
         if self.search_history:
             prev_focus, search_history = self.search_history.pop()
             self.set_search_results(*search_history)
+            self.viewing_previous_songs = False
+            self.line_box.set_title("Search Results")
             try:
                 self.set_focus(prev_focus)
             except IndexError:
                 pass
 
     def update_search_results(self, songs, albums, artists, situations, radio_stations, playlists, yt_vids):
-        self.search_history.append((self.get_focus()[1], self.search_results))
+        if not self.viewing_previous_songs:  # only remember search history
+            self.search_history.append((self.get_focus()[1], self.search_results))
         self.set_search_results(songs, albums, artists, situations, radio_stations, playlists, yt_vids)
+        self.viewing_previous_songs = False
+        self.line_box.set_title("Search Results")
+
+    def view_previous_songs(self, songs, yt_vids):
+        if not self.viewing_previous_songs:  # only remember search history
+            self.search_history.append((self.get_focus()[1], self.search_results))
+        self.set_search_results(songs, [], [], [], [], [], yt_vids)
+        self.viewing_previous_songs = True
+        self.line_box.set_title("Previous Songs")
 
     def set_search_results(self, songs, albums, artists, situations, radio_stations, playlists, yt_vids):
 
@@ -640,6 +654,8 @@ class App(urwid.Pile):
 
         self.search_panel = SearchPanel(self)
         search_panel_wrapped = urwid.LineBox(self.search_panel, title='Search Results')
+        # Give search panel reference to LineBox to change the title dynamically
+        self.search_panel.line_box = search_panel_wrapped
         search_panel_wrapped = urwid.AttrMap(search_panel_wrapped, 'region_bg normal', 'region_bg select')
         self.search_panel_wrapped = search_panel_wrapped
 
@@ -824,7 +840,7 @@ class App(urwid.Pile):
             self.player.pause = True
             self.play_state = 'pause'
             self.playbar.update()
-        elif (self.play_state == 'pause' or (self.play_state == 'stop' and self.current_song is not None)):
+        elif self.play_state == 'pause' or (self.play_state == 'stop' and self.current_song is not None):
             self.player.pause = False
             self.play_state = 'play'
             self.playbar.update()
@@ -877,7 +893,8 @@ class App(urwid.Pile):
         elif key == 'ctrl r':
             hist_songs = [item for item in self.history if type(item) == Song]
             hist_yt = [item for item in self.history if type(item) == YTVideo]
-            self.search_panel.update_search_results(hist_songs, [], [], [], [], [], hist_yt)
+            # self.search_panel.update_search_results(hist_songs, [], [], [], [], [], hist_yt)
+            self.search_panel.view_previous_songs(hist_songs, hist_yt)
         elif key == 'ctrl s':
             self.queue_panel.shuffle()
         elif key == 'ctrl u':
@@ -1059,8 +1076,6 @@ class App(urwid.Pile):
         queue.extend(self.queue_panel.queue)
         with open(join(CONFIG_DIR, 'queue.p'), 'wb') as f:
             pickle.dump(queue, f)
-        with open(join(CONFIG_DIR, 'hist.p'), 'wb') as f:
-            pickle.dump(self.history, f)
 
     def restore_queue(self):
         try:
