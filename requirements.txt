@@ -3,6 +3,6 @@ urwid==2.0.1
 pyYAML>=4.2b1
 python-mpv==0.3.6
 scrypt==0.8.0
-PyGObject==3.28.3
+PyGObject>=3.28.3
 pydbus==0.6.0
 google-api-python-client==1.7.4
