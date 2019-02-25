@@ -646,11 +646,13 @@ class App(urwid.Pile):
         self.g_api = None
         self.loop = None
         self.config_pw = None
+        self.reached_end_of_track = False
 
         @self.player.event_callback('end_file')
         def end_file_callback(event):
             if event['event']['reason'] == 0:
-                self.queue_panel.play_next()
+                self.reached_end_of_track = True
+                self.schedule_refresh(dt=0.01)
 
         self.search_panel = SearchPanel(self)
         search_panel_wrapped = urwid.LineBox(self.search_panel, title='Search Results')
@@ -788,7 +790,8 @@ class App(urwid.Pile):
             return None
 
     def refresh(self, *args, **kwargs):
-        if self.play_state == 'play' and self.player.eof_reached:
+        if self.play_state == 'play' and self.reached_end_of_track:
+            self.reached_end_of_track = False
             self.queue_panel.play_next()
         self.playbar.update()
         self.loop.draw_screen()
@@ -893,7 +896,6 @@ class App(urwid.Pile):
         elif key == 'ctrl r':
             hist_songs = [item for item in self.history if type(item) == Song]
             hist_yt = [item for item in self.history if type(item) == YTVideo]
-            # self.search_panel.update_search_results(hist_songs, [], [], [], [], [], hist_yt)
             self.search_panel.view_previous_songs(hist_songs, hist_yt)
         elif key == 'ctrl s':
             self.queue_panel.shuffle()
