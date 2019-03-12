@@ -438,7 +438,11 @@ class SearchPanel(urwid.ListBox):
     def set_search_results(self, songs, albums, artists, situations, radio_stations, playlists, yt_vids):
 
         def filter_none(lst):
-            return [obj for obj in lst if obj is not None][:30]
+            filtered = [obj for obj in lst if obj is not None]
+            if self.viewing_previous_songs:
+                return filtered
+            else:
+                return filtered[:30]
         songs = filter_none(songs)
         albums = filter_none(albums)
         artists = filter_none(artists)
