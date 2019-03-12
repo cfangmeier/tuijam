@@ -424,15 +424,15 @@ class SearchPanel(urwid.ListBox):
     def update_search_results(self, songs, albums, artists, situations, radio_stations, playlists, yt_vids):
         if not self.viewing_previous_songs:  # only remember search history
             self.search_history.append((self.get_focus()[1], self.search_results))
-        self.set_search_results(songs, albums, artists, situations, radio_stations, playlists, yt_vids)
         self.viewing_previous_songs = False
+        self.set_search_results(songs, albums, artists, situations, radio_stations, playlists, yt_vids)
         self.line_box.set_title("Search Results")
 
     def view_previous_songs(self, songs, yt_vids):
         if not self.viewing_previous_songs:  # only remember search history
             self.search_history.append((self.get_focus()[1], self.search_results))
-        self.set_search_results(songs, [], [], [], [], [], yt_vids)
         self.viewing_previous_songs = True
+        self.set_search_results(songs, [], [], [], [], [], yt_vids)
         self.line_box.set_title("Previous Songs")
 
     def set_search_results(self, songs, albums, artists, situations, radio_stations, playlists, yt_vids):

@@ -14,7 +14,7 @@ with open('README.md') as f:
 
 setup(
     name='tuijam',
-    version='0.3.7',
+    version='0.3.8',
     description='A fancy TUI client for Google Play Music',
     long_description=desc,
     long_description_content_type='text/markdown',
