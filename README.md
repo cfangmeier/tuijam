@@ -26,7 +26,8 @@ pip install --user tuijam
 
 or from the AUR
 ```bash
-yay -S tuijam
+yay -S tuijam  # mainline
+yay -S tuijam-git # dev build
 ```
 
 # Configuration
