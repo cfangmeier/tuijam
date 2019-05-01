@@ -3,7 +3,6 @@
 from os.path import join, expanduser, isfile
 from os import makedirs
 from itertools import zip_longest
-from collections import deque
 from getpass import getpass
 import sys
 import pickle
@@ -684,7 +683,7 @@ class App(urwid.Pile):
 
         self.play_state = 'stop'
         self.current_song = None
-        self.history = deque([], 100)
+        self.history = []
 
     def login(self):
         self.g_api = gmusicapi.Mobileclient(debug_logging=False)
@@ -703,7 +702,7 @@ class App(urwid.Pile):
 
         email, password, device_id = None, None, None
         with open(config_file) as f:
-            config = yaml.load(f.read())
+            config = yaml.safe_load(f.read())
             if config['encrypted']:
                 from scrypt import decrypt
                 if self.config_pw is not None:
@@ -778,7 +777,7 @@ class App(urwid.Pile):
         data['video'] = False
         config_file = join(CONFIG_DIR, 'config.yaml')
         with open(config_file, "w") as outfile:
-            yaml.dump(data, outfile, default_flow_style=False)
+            yaml.safe_dump(data, outfile, default_flow_style=False)
 
     def get_device_id(self, email, password):
         if not self.g_api.login(email, password, self.g_api.FROM_MAC_ADDRESS):
@@ -816,7 +815,8 @@ class App(urwid.Pile):
         self.player.pause = False
         self.play_state = 'play'
         self.playbar.update()
-        self.history.append(song)
+        self.history.insert(0, song)
+        self.history = self.history[:100]
         self.schedule_refresh()
 
         if self.mpris_enabled:
