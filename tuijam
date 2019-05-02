@@ -4,6 +4,7 @@ from os.path import join, expanduser, isfile
 from os import makedirs
 from itertools import zip_longest
 from getpass import getpass
+from collections import deque # needed for history migration
 import sys
 import pickle
 
@@ -1098,6 +1099,9 @@ class App(urwid.Pile):
         try:
             with open(join(CONFIG_DIR, 'hist.p'), 'rb') as f:
                 self.history = pickle.load(f)
+                if type(self.history) is deque:
+                    print("migrating from old version...")
+                    self.history = list(self.history)
         except (FileNotFoundError, pickle.UnpicklingError):
             print("failed to restore recently played. :(")
 
