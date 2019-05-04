@@ -704,7 +704,7 @@ class App(urwid.Pile):
         email, password, device_id = None, None, None
         with open(config_file) as f:
             config = yaml.safe_load(f.read())
-            if config['encrypted']:
+            if config.get('encrypted', False):
                 from scrypt import decrypt
                 if self.config_pw is not None:
                     config_pw = self.config_pw  # From first_time_setup
