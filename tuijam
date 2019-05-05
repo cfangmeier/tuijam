@@ -383,7 +383,6 @@ class SearchPanel(urwid.ListBox):
     def keypress(self, size, key):
         if key == 'q' or key == 'Q':
             add_to_front = key == 'Q'
-            # TODO Add tracks to the front of a queue
             selected = self.selected_search_obj()
             if selected:
                 if type(selected) == Song:
@@ -549,7 +548,6 @@ class QueuePanel(urwid.ListBox):
             if to_front:
                 self.queue.insert(0, song)
                 self.walker.insert(0, song.ui())
-                # TODO
             else:
                 self.queue.append(song)
                 self.walker.append(song.ui())
