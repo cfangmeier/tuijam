@@ -4,7 +4,7 @@ from os.path import join, expanduser, isfile
 from os import makedirs
 from itertools import zip_longest
 from getpass import getpass
-from collections import deque # needed for history migration
+from collections import deque  # needed for history migration
 import sys
 import pickle
 
@@ -381,20 +381,24 @@ class SearchPanel(urwid.ListBox):
         self.walker.append(urwid.Text(WELCOME, align='center'))
 
     def keypress(self, size, key):
-        if key == 'q':
+        if key == 'q' or key == 'Q':
+            add_to_front = key == 'Q'
             selected = self.selected_search_obj()
             if selected:
                 if type(selected) == Song:
-                    self.app.queue_panel.add_song_to_queue(selected)
+                    self.app.queue_panel.add_song_to_queue(selected, add_to_front)
                 elif type(selected) == YTVideo:
-                    self.app.queue_panel.add_song_to_queue(selected)
+                    self.app.queue_panel.add_song_to_queue(selected, add_to_front)
                 elif type(selected) == Album:
-                    self.app.queue_panel.add_album_to_queue(selected)
+                    self.app.queue_panel.add_album_to_queue(selected, add_to_front)
                 elif type(selected) == RadioStation:
-                    for song in self.app.get_radio_songs(selected.get_station_id(self.app.g_api)):
-                        self.app.queue_panel.add_song_to_queue(song)
+                    radio_song_list = self.app.get_radio_songs(selected.get_station_id(self.app.g_api))
+                    if add_to_front:
+                        radio_song_list = reversed(radio_song_list)
+                    for song in radio_song_list:
+                        self.app.queue_panel.add_song_to_queue(song, add_to_front)
                 elif type(selected) == Playlist:
-                    self.app.queue_panel.add_songs_to_queue(selected.songs)
+                    self.app.queue_panel.add_songs_to_queue(selected.songs, add_to_front)
         elif key in ('e', 'enter'):
             if self.selected_search_obj() is not None:
                 self.app.expand(self.selected_search_obj())
@@ -539,23 +543,26 @@ class QueuePanel(urwid.ListBox):
         self.queue = []
         super().__init__(self.walker)
 
-    def add_song_to_queue(self, song):
+    def add_song_to_queue(self, song, to_front=False):
         if song:
-            self.queue.append(song)
-            self.walker.append(song.ui())
-
-    def add_songs_to_queue(self, songs):
-        for song in songs:
-            self.add_song_to_queue(song)
-
-    def add_album_to_queue(self, album):
-        album_info = self.app.g_api.get_album_info(album.id)
-
-        for track in album_info['tracks']:
-            song = Song.from_dict(track)
-            if song:
+            if to_front:
+                self.queue.insert(0, song)
+                self.walker.insert(0, song.ui())
+            else:
                 self.queue.append(song)
                 self.walker.append(song.ui())
+
+    def add_songs_to_queue(self, songs, to_front=False):
+        song_list = reversed(songs) if to_front else songs
+        for song in song_list:
+            self.add_song_to_queue(song, to_front)
+
+    def add_album_to_queue(self, album, to_front=False):
+        album_info = self.app.g_api.get_album_info(album.id)
+        track_list = reversed(album_info['tracks']) if to_front else album_info['tracks']
+        for track in track_list:
+            song = Song.from_dict(track)
+            self.add_song_to_queue(song, to_front)
 
     def drop(self, idx):
         if 0 <= idx < len(self.queue):
