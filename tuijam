@@ -540,7 +540,7 @@ class SearchPanel(urwid.ListBox):
                         return group[focus_id]
 
                     focus_id -= len(group)
-        except:
+        except (IndexError, TypeError):
             pass
 
 
