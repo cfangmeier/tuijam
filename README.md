@@ -85,6 +85,7 @@ video: true
   - `+` volume up
   - `-` volume down
   - `tab`/`shift-tab` cycle focus through search/queue/input windows
+  - `\`/`ctrl-f` move to search bar
   - In search window,
     - `q` Add selected song/album to queue
     - `shift-q` Add selected song/album to the top of queue (play next)
@@ -92,9 +93,11 @@ video: true
     - `e` view information about selected song/album/artist
     - `backspace` go back in search/expand history
   - In queue window,
-    - `u` move selected song up in queue
-    - `d` move selected song down in queue
-    - `delete` remove selected song from queue
+    - `u`/`shift-up` move selected song up in queue
+    - `d`/`shift-down` move selected song down in queue
+    - `shift-u`/`v`/`ctrl-up` move selected song to the top in queue
+    - `shift-d`/`ctrl-down` move selected song to the bottom in queue
+    - `delete`/`x` remove selected song from queue
   - In input window,
     - Type search query and press enter. Results are shown in search window.
     - Enter an empty query to view the suggested "Listen Now" stations and albums.
