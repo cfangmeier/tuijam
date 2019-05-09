@@ -540,6 +540,7 @@ class SearchPanel(urwid.ListBox):
                         return group[focus_id]
 
                     focus_id -= len(group)
+                    
         except (IndexError, TypeError):
             pass
 
@@ -554,8 +555,8 @@ class PlayBar(urwid.ProgressBar):
 
     def get_prog_tot(self):
 
-        progress = int(self.app.player.time_pos or 0)
-        remaining = int(self.app.player.time_remaining or 0)
+        progress = self.app.player.time_pos or 0
+        remaining = self.app.player.time_remaining or 0
         total = progress + remaining
         
         return progress, total
