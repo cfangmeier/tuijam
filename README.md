@@ -68,6 +68,11 @@ From version 0.3.0, Youtube videos are included in search results. By default, n
 video: true
 ```
 
+# Last.fm Support
+The player supports Last.fm scrobbling. To enable it, you need to run: 
+```bash
+tuijam get_lastfm_token
+```.
 
 # Controls
   - `ctrl-c` quit

@@ -40,8 +40,6 @@ RATE_UI = {
 }
 
 
-# TODO Last.fm API integration
-
 class LastFMAPI:
     API_KEY = '5cc045ddea219f89adb7efec168d64ac'
     API_SECRET = '8397b63671b211c4e70f6ba1d8ea7825'
@@ -126,7 +124,7 @@ class LastFMAPI:
     def scrobble(self, artist, track, album, duration, ts_start):
         # See: https://www.last.fm/api/scrobbling#when-is-a-scrobble-a-scrobble
         # Minimum 30 seconds long + has been listened for min(50% of its length or 4 minutes)
-        # TODO scrobble method (https://www.last.fm/api/show/track.scrobble)
+        # See the scrobble method reference (https://www.last.fm/api/show/track.scrobble)
         if self.sk is None or duration < 30:
             return
 
