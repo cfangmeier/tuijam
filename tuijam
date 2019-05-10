@@ -119,7 +119,9 @@ class LastFMAPI:
 
     def update_now_playing_song(self, song):
         self.update_now_playing(song.artist, song.title, song.album, song.length[1]*60 + song.length[0])
-        song.lastfm_ts_start = int(datetime.utcnow().timestamp())
+        song.lastfm_ts_start = int(datetime.now().timestamp())
+        # ^ there could be a bug when tracks are scrobbled in the past or the future
+        #   (depends on timezone)
 
     def scrobble(self, artist, track, album, duration, ts_start):
         # See: https://www.last.fm/api/scrobbling#when-is-a-scrobble-a-scrobble
