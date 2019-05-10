@@ -13,6 +13,9 @@ import gmusicapi
 import logging
 import yaml
 
+import requests
+import hashlib
+
 WELCOME = '''
    ▄             ▀       ▀                
  ▄▄█▄▄  ▄   ▄  ▄▄▄     ▄▄▄    ▄▄▄   ▄▄▄▄▄ 
@@ -36,9 +39,93 @@ RATE_UI = {
 }
 
 
+# TODO Last.fm API integration
+
+class LastFMAPI:
+    API_KEY = '5cc045ddea219f89adb7efec168d64ac'
+    API_SECRET = '8397b63671b211c4e70f6ba1d8ea7825'
+    API_ROOT_URL = 'http://ws.audioscrobbler.com/2.0/'
+    USER_AGENT = 'TUIJam/0.3.12'  # TODO construct user-agent based on version from setup.py
+
+    def __init__(self, sk=None):
+        # Initialize session key with None
+        self.sk = sk
+        pass
+
+    def call_method(self, method_name: str, params=None) -> dict:
+        # Construct API request parameters dict
+        if params is None:
+            params = {}
+
+        api_params = {
+            'method': method_name,
+            'api_key': LastFMAPI.API_KEY,
+        }
+        api_params.update(params)
+
+        # Construct api_sig (https://www.last.fm/api/desktopauth#6)
+        m = hashlib.md5()
+        for key in sorted(api_params.keys()):
+            m.update((key.encode('utf-8') + str(api_params[key]).encode('utf-8')))
+        m.update(LastFMAPI.API_SECRET.encode('utf-8'))
+
+        # Add api_sig to the request parameters
+        api_params.update({'api_sig': m.hexdigest()})
+
+        # Last.fm API docs don't even say that you DON'T need to put it in api_sig.
+        # Unlike other methods, auth.getToken works with it.
+        # Shame on you, Last.fm!
+        api_params.update({'format': 'json'})
+
+        r = requests.post(LastFMAPI.API_ROOT_URL,
+                         params=api_params,
+                         headers={'User-Agent': LastFMAPI.USER_AGENT})
+        return r.json()
+
+    def get_token(self):
+        token_response = self.call_method('auth.getToken')
+        token = None
+        if not token_response.get('error'):
+            token = token_response.get('token')
+            return token
+        else:
+            # TODO throw an exception?
+            return None
+
+    def get_auth_url(self, token):
+        return 'http://www.last.fm/api/auth/?api_key=%s&token=%s' % (LastFMAPI.API_KEY, token)
+
+    def auth_by_token(self, token):
+        response = self.call_method('auth.getSession', {'token': token})
+        logging.warning('LASTFM: auth_by_token: ' + response.__str__())
+        if response.get('error', False):
+            return False
+        self.sk = response.get('session').get('key')
+        return True
+
+    def update_now_playing(self, artist, track, album, duration):
+        if self.sk is None:
+            return
+        response = self.call_method('track.updateNowPlaying', {
+            'artist': artist,
+            'track': track,
+            'album': album,
+            'duration': duration,
+            'sk': self.sk
+        })
+        logging.warning('LASTFM: updateNowPlaying: ' + response.__str__())
+        # TODO error handle
+
+    def scrobble(self, artist, track, album, duration):
+        # See: https://www.last.fm/api/scrobbling#when-is-a-scrobble-a-scrobble
+        # Minimum 30 seconds long + has been listened for min(50% of its length or 4 minutes)
+        # TODO scrobble method (https://www.last.fm/api/show/track.scrobble)
+        pass
+
 def sec_to_min_sec(sec_tot):
     s = int(sec_tot or 0)
-    return s//60, s%60
+    return s//60, s % 60
+
 
 class MusicObject:
 
@@ -610,7 +697,6 @@ class QueuePanel(urwid.ListBox):
         self.queue = []
         super().__init__(self.walker)
 
-
     def add_song_to_queue(self, song, to_front=False):
 
         if song:
@@ -622,7 +708,6 @@ class QueuePanel(urwid.ListBox):
             else:
                 self.queue.append(song)
                 self.walker.append(song.ui())
-
 
     def add_songs_to_queue(self, songs, to_front=False):
 
@@ -682,7 +767,6 @@ class QueuePanel(urwid.ListBox):
             del self.walker[idx]
             self.walker.append(ui)
 
-
     def shuffle(self):
         from random import shuffle
         shuffle(self.queue)
@@ -695,7 +779,14 @@ class QueuePanel(urwid.ListBox):
 
         if self.walker:
             self.walker.pop(0)
-            self.app.play(self.queue.pop(0))
+            next_song = self.queue.pop(0)
+            self.app.play(next_song)
+
+            logging.warning('LASTFM: play_next: enabled = ' + str(self.app.lastfm_enabled))
+            logging.warning('LASTFM: play_next: song type = ' + str(type(next_song)))
+            if self.app.lastfm_enabled and type(next_song) == Song:
+                self.app.lastfm.update_now_playing(next_song.artist, next_song.title, next_song.album,
+                                                   next_song.length[1]*60+next_song.length[0])
         
         else:
             self.app.current_song = None
@@ -785,6 +876,8 @@ class App(urwid.Pile):
         self.loop = None
         self.config_pw = None
         self.reached_end_of_track = False
+        self.lastfm_enabled = False
+        self.lastfm = None
 
         @self.player.event_callback('end_file')
         def end_file_callback(event):
@@ -837,7 +930,6 @@ class App(urwid.Pile):
         else:
             return self.g_api.login(*credentials)
 
-
     def read_config(self):
 
         config_file = join(CONFIG_DIR, 'config.yaml')
@@ -881,6 +973,12 @@ class App(urwid.Pile):
             self.persist_queue = config.get('persist_queue', True)
             self.reverse_scrolling = config.get('reverse_scrolling', False)
             self.video = config.get('video', False)
+
+            self.lastfm_sk = config.get('lastfm_sk', None)
+            if self.lastfm_sk is not None:
+                self.lastfm = LastFMAPI(self.lastfm_sk)
+                # TODO handle if sk is invalid
+                self.lastfm_enabled = True
 
         return email, password, device_id
 
@@ -947,7 +1045,6 @@ class App(urwid.Pile):
   
         with open(config_file, "w") as outfile:
             yaml.safe_dump(data, outfile, default_flow_style=False)
-
 
     def get_device_id(self, email, password):
         
@@ -1154,7 +1251,6 @@ class App(urwid.Pile):
         else:
             super().mouse_event(size, event, button, col, row, focus=focus)
 
-
     def expand(self, obj):
         if obj is None:
             return
@@ -1244,7 +1340,6 @@ class App(urwid.Pile):
         self.search_panel.update_search_results(songs, albums, artists, [], [], [], ytvids)
         self.set_focus(self.search_panel_wrapped)
 
-
     def listen_now(self):
 
         situations = self.g_api.get_listen_now_situations()
@@ -1283,12 +1378,10 @@ class App(urwid.Pile):
         for song in self.get_radio_songs(station_id):
             self.queue_panel.add_song_to_queue(song)
 
-
     def get_radio_songs(self, station_id, n=50):
 
         song_dicts = self.g_api.get_station_tracks(station_id, num_tracks=n)
         return [Song.from_dict(song_dict) for song_dict in song_dicts]
-
 
     def rate_current_song(self, rating):
 
@@ -1326,7 +1419,6 @@ class App(urwid.Pile):
         self.save_hist()
         sys.exit()
 
-
     def save_queue(self):
         
         print("saving queue")
@@ -1349,12 +1441,10 @@ class App(urwid.Pile):
         except (FileNotFoundError, pickle.UnpicklingError):
             print("failed to restore queue. :(")
 
-
     def save_hist(self):
 
         with open(join(CONFIG_DIR, 'hist.p'), 'wb') as f:
             pickle.dump(self.history, f)
-
 
     def restore_hist(self):
 
@@ -1594,14 +1684,35 @@ class App(urwid.Pile):
                           ('/org/mpris/MediaPlayer2', self.mpris))
 
 
-def main(debug=False):
+def lastfm_conf():
+    print("generating Last.fm authentication token")
+    api = LastFMAPI()
+    token = api.get_token()
+    auth_url = api.get_auth_url(token)
+    print()
+    print("Please open this link in your browser and authorize the app:")
+    print(auth_url)
+    print()
+    input("After that, press Enter to get your session key...")
+    if not api.auth_by_token(token):
+        print('Failed to get a session key. Have you authorized?')
+    else:
+        print('Please, paste this line into your config file:')
+        print("lastfm_sk: " + api.sk)
+
+
+def main(debug=False, get_lastfm_token=False):
 
     print("starting up.")
     makedirs(CONFIG_DIR, exist_ok=True)
     
     log_file = join(CONFIG_DIR, 'log.txt')
     logging.basicConfig(filename=log_file, filemode='w', level=logging.WARNING)
-    
+
+    if get_lastfm_token:
+        lastfm_conf()
+        exit(0)
+
     app = App()
     print("logging in.")
     if not app.login():
@@ -1641,5 +1752,6 @@ def main(debug=False):
 
 
 if __name__ == '__main__':
-    debug = sys.argv[-1] == 'debug'
-    app = main(debug=debug)
+    debug = 'debug' in sys.argv[1:]
+    get_lastfm_token = 'get_lastfm_token' in sys.argv[1:]
+    app = main(debug=debug, get_lastfm_token=get_lastfm_token)
