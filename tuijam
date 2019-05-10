@@ -15,6 +15,7 @@ import yaml
 
 import requests
 import hashlib
+from datetime import datetime
 
 WELCOME = '''
    ▄             ▀       ▀                
@@ -116,11 +117,31 @@ class LastFMAPI:
         logging.warning('LASTFM: updateNowPlaying: ' + response.__str__())
         # TODO error handle
 
-    def scrobble(self, artist, track, album, duration):
+    def update_now_playing_song(self, song):
+        self.update_now_playing(song.artist, song.title, song.album, song.length[1]*60 + song.length[0])
+        song.lastfm_ts_start = int(datetime.utcnow().timestamp())
+
+    def scrobble(self, artist, track, album, duration, ts_start):
         # See: https://www.last.fm/api/scrobbling#when-is-a-scrobble-a-scrobble
         # Minimum 30 seconds long + has been listened for min(50% of its length or 4 minutes)
         # TODO scrobble method (https://www.last.fm/api/show/track.scrobble)
-        pass
+        if self.sk is None or duration < 30:
+            return
+
+        response = self.call_method('track.scrobble', {
+            'timestamp[0]': str(ts_start),
+            'artist[0]': artist,
+            'track[0]': track,
+            'album[0]': album,
+            'duration[0]': duration,
+            'sk': self.sk
+        })
+        logging.warning("LASTFM: scrobble: response = " + response.__str__())
+
+    def scrobble_song(self, song):
+        self.scrobble(song.artist, song.title, song.album, song.length[1]*60 + song.length[0], song.lastfm_ts_start)
+        song.lastfm_scrobbled = True
+
 
 def sec_to_min_sec(sec_tot):
     s = int(sec_tot or 0)
@@ -648,7 +669,6 @@ class PlayBar(urwid.ProgressBar):
         
         return progress, total
 
-
     def get_text(self):
         if self.app.current_song is None:
             return 'Idle'
@@ -683,6 +703,10 @@ class PlayBar(urwid.ProgressBar):
         if progress >= 0 and total > 0:
             percent = progress / total * 100
             self.set_completion(percent)
+            if self.app.lastfm_enabled:
+                song = self.app.current_song
+                if not song.lastfm_scrobbled and total >= 30 and (percent > 50 or progress > 4*60):
+                    self.app.lastfm.scrobble_song(song)
 
         else:
             self.set_completion(0)
@@ -780,13 +804,13 @@ class QueuePanel(urwid.ListBox):
         if self.walker:
             self.walker.pop(0)
             next_song = self.queue.pop(0)
-            self.app.play(next_song)
 
-            logging.warning('LASTFM: play_next: enabled = ' + str(self.app.lastfm_enabled))
+            logging.warning('LASTFM: play_next: scrobble enabled = ' + str(self.app.lastfm_enabled))
             logging.warning('LASTFM: play_next: song type = ' + str(type(next_song)))
             if self.app.lastfm_enabled and type(next_song) == Song:
-                self.app.lastfm.update_now_playing(next_song.artist, next_song.title, next_song.album,
-                                                   next_song.length[1]*60+next_song.length[0])
+                next_song.lastfm_scrobbled = False
+                self.app.lastfm.update_now_playing_song(next_song)
+            self.app.play(next_song)
         
         else:
             self.app.current_song = None
@@ -885,6 +909,8 @@ class App(urwid.Pile):
             if event['event']['reason'] == 0:
             
                 self.reached_end_of_track = True
+                if self.lastfm_enabled:
+                    self.current_song.lastfm_scrobbled = False
                 self.schedule_refresh(dt=0.01)
 
         self.search_panel = SearchPanel(self)
