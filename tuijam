@@ -993,6 +993,7 @@ class App(urwid.Pile):
                     password = decrypt(config['password'], config_pw, maxtime=20)
                     device_id = decrypt(config['device_id'], config_pw, maxtime=20)
                     lastfm_sk_encrypted = config.get('lastfm_sk', None)
+                    self.lastfm_sk = None
                     if lastfm_sk_encrypted:
                         self.lastfm_sk = decrypt(lastfm_sk_encrypted, config_pw, maxtime=20)
 
