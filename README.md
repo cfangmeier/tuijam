@@ -72,7 +72,8 @@ video: true
 The player supports Last.fm scrobbling. To enable it, you need to run: 
 ```bash
 tuijam get_lastfm_token
-```.
+```
+
 
 # Controls
   - `ctrl-c` quit

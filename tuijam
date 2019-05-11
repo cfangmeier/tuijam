@@ -1711,20 +1711,36 @@ class App(urwid.Pile):
 
 
 def lastfm_conf():
+    config_file = join(CONFIG_DIR, 'config.yaml')
+    if not isfile(config_file):
+        print("It seems that you haven't run tuijam yet.")
+        print("Please run it first, then authorize to Last.fm.")
+        return
+
     print("generating Last.fm authentication token")
     api = LastFMAPI()
     token = api.get_token()
     auth_url = api.get_auth_url(token)
+
+    import webbrowser
+    webbrowser.open_new_tab(auth_url)
+
     print()
-    print("Please open this link in your browser and authorize the app:")
+    print("Please open this link in your browser and authorize the app in case the window "
+          "hasn't been opened automatically:")
     print(auth_url)
     print()
     input("After that, press Enter to get your session key...")
     if not api.auth_by_token(token):
         print('Failed to get a session key. Have you authorized?')
     else:
-        print('Please, paste this line into your config file:')
-        print("lastfm_sk: " + api.sk)
+        with open(config_file, '+') as f:
+            lastfm_sk = api.sk
+            config = yaml.safe_load(f.read())
+            config.update({'lastfm_sk': lastfm_sk})
+            yaml.safe_dump(config, f, default_flow_style=False)
+            f.close()
+        print('Successfully authenticated.')
 
 
 def main(debug=False, get_lastfm_token=False):
