@@ -18,14 +18,14 @@ import hashlib
 from datetime import datetime
 
 WELCOME = '''
-   ▄             ▀       ▀                
- ▄▄█▄▄  ▄   ▄  ▄▄▄     ▄▄▄    ▄▄▄   ▄▄▄▄▄ 
-   █    █   █    █       █   ▀   █  █ █ █ 
-   █    █   █    █       █   ▄▀▀▀█  █ █ █ 
-   ▀▄▄  ▀▄▄▀█  ▄▄█▄▄     █   ▀▄▄▀█  █ █ █ 
-                         █                
-                       ▀▀                 
-         - A Google Music Player -        
+   ▄             ▀       ▀
+ ▄▄█▄▄  ▄   ▄  ▄▄▄     ▄▄▄    ▄▄▄   ▄▄▄▄▄
+   █    █   █    █       █   ▀   █  █ █ █
+   █    █   █    █       █   ▄▀▀▀█  █ █ █
+   ▀▄▄  ▀▄▄▀█  ▄▄█▄▄     █   ▀▄▄▀█  █ █ █
+                         █
+                       ▀▀
+         - A Google Music Player -
 '''  # noqa
 
 CONFIG_DIR = join(expanduser('~'), '.config', 'tuijam')
@@ -77,8 +77,8 @@ class LastFMAPI:
         api_params.update({'format': 'json'})
 
         r = requests.post(LastFMAPI.API_ROOT_URL,
-                         params=api_params,
-                         headers={'User-Agent': LastFMAPI.USER_AGENT})
+                          params=api_params,
+                          headers={'User-Agent': LastFMAPI.USER_AGENT})
         return r.json()
 
     def get_token(self):
@@ -117,7 +117,8 @@ class LastFMAPI:
 
     def update_now_playing_song(self, song):
         try:
-            self.update_now_playing(song.artist, song.title, song.album, song.length[1]*60 + song.length[0])
+            self.update_now_playing(song.artist, song.title, song.album,
+                                    song.length[1]*60 + song.length[0])
             song.lastfm_ts_start = int(datetime.now().timestamp())
             # ^ there could be a bug when tracks are scrobbled in the past or the future
             #   (depends on timezone)
@@ -144,7 +145,8 @@ class LastFMAPI:
 
     def scrobble_song(self, song):
         try:
-            self.scrobble(song.artist, song.title, song.album, song.length[1]*60 + song.length[0], song.lastfm_ts_start)
+            self.scrobble(song.artist, song.title, song.album,
+                          song.length[1]*60 + song.length[0], song.lastfm_ts_start)
             song.lastfm_scrobbled = True
         except Exception as e:
             logging.exception("LASTFM: scrobble: " + e.__str__())
@@ -178,15 +180,15 @@ class MusicObject:
 
         header = urwid.Columns(
             [('weight', weight, urwid.Text(('header', txt)))
-                for weight, txt in zip_longest(weights, txts, fillvalue=1)])
+             for weight, txt in zip_longest(weights, txts, fillvalue=1)])
         return urwid.AttrMap(header, 'header_bg')
 
 
 class Song(MusicObject):
     ui_weights = (1, 2, 1, 0.2, 0.2)
 
-    def __init__(self, title, album, albumId, albumArtRef, artist, artistId, 
-                    id_, type_, trackType, length, rating):
+    def __init__(self, title, album, albumId, albumArtRef, artist, artistId,
+                 id_, type_, trackType, length, rating):
         self.title = title
         self.album = album
         self.albumId = albumId
@@ -244,10 +246,10 @@ class Song(MusicObject):
             #  0 - No Rating
             #  1 - Thumbs down
             #  5 - Thumbs up
-            
+
             rating = int(d.get('rating', 0))
             return Song(title, album, albumId, albumArtRef, artist, artistId, id_, type_, trackType, length, rating)
-        
+
         except KeyError as e:
             logging.exception(f"Missing Key {e} in dict \n{d}")
 
@@ -287,9 +289,9 @@ class YTVideo(MusicObject):
             thumbnail = d['snippet']['thumbnails']['medium']['url']
             channel = d['snippet']['channelTitle']
             id_ = d['id']['videoId']
-        
+
             return YTVideo(title, channel, thumbnail, id_)
-        
+
         except KeyError as e:
             logging.exception(f"Missing Key {e} in dict \n{d}")
 
@@ -413,7 +415,7 @@ class Situation(MusicObject):
                 else:
                     stations.extend([
                         RadioStation(
-                            station['name'], [], 
+                            station['name'], [],
                             id_=station['seed']['curatedStationId']
                         )
                         for station in situation['stations']
@@ -451,13 +453,13 @@ class RadioStation(MusicObject):
 
     @staticmethod
     def from_dict(d):
-        
+
         try:
             title = d['title']
             seeds = d['id']['seeds']
 
             return RadioStation(title, seeds)
-        
+
         except KeyError as e:
             logging.exception(f"Missing Key {e} in dict \n{d}")
 
@@ -487,10 +489,10 @@ class Playlist(MusicObject):
             name = d['name']
             id_ = d['id']
             songs = [Song.from_dict(song['track']) for song in d['tracks'] if 'track' in song]
-        
+
             if songs:
                 return Playlist(name, songs, id_)
-        
+
         except KeyError as e:
             logging.exception(f"Missing Key {e} in dict \n{d}")
 
@@ -539,42 +541,42 @@ class SearchPanel(urwid.ListBox):
 
             add_to_front = key == 'Q'
             selected = self.selected_search_obj()
-            
+
             if not selected:
                 return
-            
+
             if type(selected) == Song or type(selected) == YTVideo:
                 self.app.queue_panel.add_song_to_queue(selected, add_to_front)
-            
+
             elif type(selected) == Album:
                 self.app.queue_panel.add_album_to_queue(selected, add_to_front)
-            
+
             elif type(selected) == RadioStation:
                 radio_song_list = self.app.get_radio_songs(selected.get_station_id(self.app.g_api))
-            
+
                 if add_to_front:
                     radio_song_list = reversed(radio_song_list)
-            
+
                 for song in radio_song_list:
                     self.app.queue_panel.add_song_to_queue(song, add_to_front)
-            
+
             elif type(selected) == Playlist:
                 self.app.queue_panel.add_songs_to_queue(selected.songs, add_to_front)
-    
+
         elif key in ('e', 'enter'):
             if self.selected_search_obj() is not None:
                 self.app.expand(self.selected_search_obj())
-    
+
         elif key == 'backspace':
             self.back()
-    
+
         elif key == 'r':
             if self.selected_search_obj() is not None:
                 self.app.create_radio_station(self.selected_search_obj())
-    
+
         elif key == 'j':
             super().keypress(size, 'down')
-    
+
         elif key == 'k':
             super().keypress(size, 'up')
 
@@ -584,25 +586,25 @@ class SearchPanel(urwid.ListBox):
     def back(self):
 
         if self.search_history:
-      
+
             prev_focus, search_history = self.search_history.pop()
 
             self.set_search_results(*search_history)
             self.viewing_previous_songs = False
             self.line_box.set_title("Search Results")
-      
+
             try:
                 self.set_focus(prev_focus)
             except:
                 pass
 
     def update_search_results(self, songs, albums, artists, situations, radio_stations, playlists, yt_vids, title="Search Results", isprevsong=False):
-        
+
         if not self.viewing_previous_songs:  # only remember search history
             self.search_history.append((self.get_focus()[1], self.search_results))
-        
+
         self.viewing_previous_songs = isprevsong
-        
+
         self.set_search_results(songs, albums, artists, situations, radio_stations, playlists, yt_vids)
         self.line_box.set_title(title)
 
@@ -636,7 +638,7 @@ class SearchPanel(urwid.ListBox):
 
             if group:
                 self.walker.append(type(group[0]).header())
-            
+
             for item in group:
                 self.walker.append(item.ui())
 
@@ -652,12 +654,12 @@ class SearchPanel(urwid.ListBox):
             for group in [artists, albums, songs, situations, radio_stations, playlists, yt_vids]:
                 if group:
                     focus_id -= 1
-                    
+
                     if focus_id < len(group):
                         return group[focus_id]
 
                     focus_id -= len(group)
-                    
+
         except (IndexError, TypeError):
             pass
 
@@ -675,7 +677,7 @@ class PlayBar(urwid.ProgressBar):
         progress = self.app.player.time_pos or 0
         remaining = self.app.player.time_remaining or 0
         total = progress + remaining
-        
+
         return progress, total
 
     def get_text(self):
@@ -688,10 +690,10 @@ class PlayBar(urwid.ProgressBar):
 
         if type(song) == Song:
             artist = song.artist
-        
+
             if song.rating in (1, 5):
                 rating = '('+RATE_UI[song.rating]+')'
-        
+
         else:  # YTVideo
             artist = song.channel
 
@@ -733,11 +735,11 @@ class QueuePanel(urwid.ListBox):
     def add_song_to_queue(self, song, to_front=False):
 
         if song:
-        
+
             if to_front:
                 self.queue.insert(0, song)
                 self.walker.insert(0, song.ui())
-        
+
             else:
                 self.queue.append(song)
                 self.walker.append(song.ui())
@@ -745,15 +747,15 @@ class QueuePanel(urwid.ListBox):
     def add_songs_to_queue(self, songs, to_front=False):
 
         song_list = reversed(songs) if to_front else songs
-        
+
         for song in song_list:
             self.add_song_to_queue(song, to_front)
 
     def add_album_to_queue(self, album, to_front=False):
-        
+
         album_info = self.app.g_api.get_album_info(album.id)
         track_list = reversed(album_info['tracks']) if to_front else album_info['tracks']
-        
+
         for track in track_list:
             song = Song.from_dict(track)
             self.add_song_to_queue(song, to_front)
@@ -771,7 +773,7 @@ class QueuePanel(urwid.ListBox):
     def swap(self, idx1, idx2):
 
         if (0 <= idx1 < len(self.queue)) and (0 <= idx2 < len(self.queue)):
-        
+
             obj1, obj2 = self.queue[idx1], self.queue[idx2]
             self.queue[idx1], self.queue[idx2] = obj2, obj1
 
@@ -779,8 +781,8 @@ class QueuePanel(urwid.ListBox):
             self.walker[idx1], self.walker[idx2] = ui2, ui1
 
     def to_top(self, idx):
-        
-        if (0 <= idx < len(self.queue)):
+
+        if 0 <= idx < len(self.queue):
             obj = self.queue[idx]
             del self.queue[idx]
             self.queue = [obj] + self.queue
@@ -791,7 +793,7 @@ class QueuePanel(urwid.ListBox):
 
     def to_bottom(self, idx):
 
-        if (0 <= idx < len(self.queue)):
+        if 0 <= idx < len(self.queue):
             obj = self.queue[idx]
             del self.queue[idx]
             self.queue.append(obj)
@@ -803,7 +805,7 @@ class QueuePanel(urwid.ListBox):
     def shuffle(self):
         from random import shuffle
         shuffle(self.queue)
-        
+
         self.walker.clear()
         for s in self.queue:
             self.walker.append(s.ui())
@@ -820,7 +822,7 @@ class QueuePanel(urwid.ListBox):
             if self.app.lastfm_enabled and type(next_song) == Song:
                 self.app.lastfm.update_now_playing_song(next_song)
             self.app.play(next_song)
-        
+
         else:
             self.app.current_song = None
             self.app.stop()
@@ -843,11 +845,11 @@ class QueuePanel(urwid.ListBox):
         if key in ('u', 'shift up'):
             self.swap(focus_id, focus_id-1)
             self.keypress(size, 'up')
-        
+
         elif key in ('d', 'shift down'):
             self.swap(focus_id, focus_id+1)
             self.keypress(size, 'down')
-        
+
         elif key in ('v', 'U', 'ctrl up'):
             self.to_top(focus_id)
             self.walker.set_focus(0)
@@ -916,7 +918,7 @@ class App(urwid.Pile):
         def end_file_callback(event):
 
             if event['event']['reason'] == 0:
-            
+
                 self.reached_end_of_track = True
                 if self.lastfm_enabled:
                     self.current_song.lastfm_scrobbled = False
@@ -924,7 +926,7 @@ class App(urwid.Pile):
 
         self.search_panel = SearchPanel(self)
         search_panel_wrapped = urwid.LineBox(self.search_panel, title='Search Results')
-        
+
         # Give search panel reference to LineBox to change the title dynamically
         self.search_panel.line_box = search_panel_wrapped
 
@@ -961,14 +963,14 @@ class App(urwid.Pile):
 
         if credentials is None:
             return False
-        
+
         else:
             return self.g_api.login(*credentials)
 
     def read_config(self):
 
         config_file = join(CONFIG_DIR, 'config.yaml')
-        
+
         if not isfile(config_file):
             if not self.first_time_setup():
                 return
@@ -977,11 +979,11 @@ class App(urwid.Pile):
         with open(config_file) as f:
 
             config = yaml.safe_load(f.read())
-            
+
             if config.get('encrypted', False):
 
                 from scrypt import decrypt
-                
+
                 if self.config_pw is not None:
                     config_pw = self.config_pw  # From first_time_setup
 
@@ -1024,20 +1026,20 @@ class App(urwid.Pile):
     def first_time_setup(self):
 
         print("Need to perform first time setup")
-        
+
         while True:
 
             email = input("Enter gmusic email (empty to quit): ")
             if not email:
                 return False
-            
+
             pw = getpass("Enter gmusic password: ")
 
             d_id = self.get_device_id(email, pw)
 
             if d_id is not None:
                 break  # Success!
-            
+
             print(('Login failed, verify your email and password.\n'
                    'Remember, you need an app-password if you have 2FA enabled.'))
 
@@ -1045,7 +1047,7 @@ class App(urwid.Pile):
         print("You will need to enter this each time you start tuijam.")
         print("If you forget this, delete the config file and start tuijam.")
         print("Leave blank if no encryption is desired.")
-        
+
         self.config_pw = getpass("password: ")
 
         print()
@@ -1057,7 +1059,7 @@ class App(urwid.Pile):
         use_encryption = len(config_pw) > 0
 
         if use_encryption:
-        
+
             from scrypt import encrypt
             data = dict(
                 encrypted=True,
@@ -1065,7 +1067,7 @@ class App(urwid.Pile):
                 password=encrypt(password, config_pw, maxtime=0.5),
                 device_id=encrypt(device_id, config_pw, maxtime=0.5)
             )
-        
+
         else:
 
             data = dict(
@@ -1081,12 +1083,12 @@ class App(urwid.Pile):
         data['video'] = False
 
         config_file = join(CONFIG_DIR, 'config.yaml')
-  
+
         with open(config_file, "w") as outfile:
             yaml.safe_dump(data, outfile, default_flow_style=False)
 
     def get_device_id(self, email, password):
-        
+
         if not self.g_api.login(email, password, self.g_api.FROM_MAC_ADDRESS):
             return
 
@@ -1094,23 +1096,23 @@ class App(urwid.Pile):
                for d in self.g_api.get_registered_devices()]
 
         self.g_api.logout()
-        
+
         try:
             return ids[0]
-        
+
         except IndexError:
             print("No device ids found. This shouldn't happen...")
             return
 
     def refresh(self, *args, **kwargs):
-        
+
         if self.play_state == 'play' and self.reached_end_of_track:
             self.reached_end_of_track = False
             self.queue_panel.play_next()
-        
+
         self.playbar.update()
         self.loop.draw_screen()
-        
+
         if self.play_state == 'play':
             self.schedule_refresh()
 
@@ -1145,10 +1147,10 @@ class App(urwid.Pile):
         try:
             self.player.pause = True
             self.player.seek(0, reference='absolute')
-        
+
         except SystemError:  # seek throws error if there is no current song in mpv
             pass
-        
+
         self.play_state = 'stop'
         self.playbar.update()
 
@@ -1165,18 +1167,18 @@ class App(urwid.Pile):
         self.playbar.update()
 
     def toggle_play(self):
-        
+
         if self.play_state == 'play':
             self.player.pause = True
             self.play_state = 'pause'
             self.playbar.update()
-        
+
         elif self.play_state == 'pause' or (self.play_state == 'stop' and self.current_song is not None):
             self.player.pause = False
             self.play_state = 'play'
             self.playbar.update()
             self.schedule_refresh()
-        
+
         elif self.play_state == 'stop':
             self.queue_panel.play_next()
 
@@ -1205,73 +1207,73 @@ class App(urwid.Pile):
 
         if key == 'tab':
             current_focus = self.focus
-        
+
             if current_focus == self.search_panel_wrapped:
                 self.set_focus(self.queue_panel_wrapped)
-        
+
             elif current_focus == self.queue_panel_wrapped:
                 self.set_focus(self.search_input)
-        
+
             else:
                 self.set_focus(self.search_panel_wrapped)
-        
+
         elif key == 'shift tab':
 
             current_focus = self.focus
             if current_focus == self.search_panel_wrapped:
                 self.set_focus(self.search_input)
- 
+
             elif current_focus == self.queue_panel_wrapped:
                 self.set_focus(self.search_panel_wrapped)
- 
+
             else:
                 self.set_focus(self.queue_panel_wrapped)
- 
+
         elif key == 'ctrl p':
             self.toggle_play()
- 
+
         elif key == 'ctrl k':
             self.stop()
- 
+
         elif key == 'ctrl n':
             self.queue_panel.play_next()
- 
+
         elif key == 'ctrl r':
             hist_songs = [item for item in self.history if type(item) == Song]
             hist_yt = [item for item in self.history if type(item) == YTVideo]
             self.search_panel.view_previous_songs(hist_songs, hist_yt)
- 
+
         elif key == 'ctrl s':
             self.queue_panel.shuffle()
- 
+
         elif key == 'ctrl u':
             self.rate_current_song(5)
- 
+
         elif key == 'ctrl d':
             self.rate_current_song(1)
- 
+
         elif key == 'ctrl w':
             self.queue_panel.clear()
- 
+
         elif key == 'ctrl q':
             self.queue_panel.add_songs_to_queue(self.search_panel.search_results[0])
- 
+
         elif self.focus != self.search_input:
             if key == '>':
                 self.seek(10)
- 
+
             elif key == '<':
                 self.seek(-10)
- 
+
             elif key in '-_':
                 self.volume_down()
- 
+
             elif key in '+=':
                 self.volume_up()
- 
+
             elif key in ('/', 'ctrl f'):
                 self.set_focus(self.search_input)
- 
+
             else:
                 return self.focus.keypress(size, key)
 
@@ -1334,14 +1336,15 @@ class App(urwid.Pile):
         elif type(obj) == YTVideo:
             yt_vids = [obj]
 
-        self.search_panel.update_search_results(songs, albums, artists, situations, radio_stations, playlists, yt_vids)
+        self.search_panel.update_search_results(songs, albums, artists, situations,
+                                                radio_stations, playlists, yt_vids)
 
     def youtube_search(self, q, max_results=50, order="relevance", token=None, location=None, location_radius=None):
-       
+
         '''
         Mostly stolen from: https://github.com/spnichol/youtube_tutorial/blob/master/youtube_videos.py
         '''
-       
+
         from apiclient.discovery import build
         developer_key = "AIzaSyBtETg1PDC124WUAZ5JhJH_pu2xboHVIS0"
 
@@ -1351,7 +1354,7 @@ class App(urwid.Pile):
             q=q,
             type="video",
             pageToken=token,
-            order = order,
+            order=order,
             part="id,snippet",
             maxResults=max_results,
             location=location,
@@ -1401,19 +1404,19 @@ class App(urwid.Pile):
 
         if type(obj) == Song:
             station_id = self.g_api.create_station(obj.title, track_id=obj.id)
-        
+
         elif type(obj) == Album:
             station_id = self.g_api.create_station(obj.title, album_id=obj.id)
-        
+
         elif type(obj) == Artist:
             station_id = self.g_api.create_station(obj.name, artist_id=obj.id)
-        
+
         elif type(obj) == RadioStation:
             station_id = obj.get_station_id(self.g_api)
-        
+
         else:
             return
-        
+
         for song in self.get_radio_songs(station_id):
             self.queue_panel.add_song_to_queue(song)
 
@@ -1426,20 +1429,20 @@ class App(urwid.Pile):
 
         if self.current_song is None:
             return
-        
+
         if self.current_song.rating == rating:
             rating = 0
-        
+
         self.current_song.rating = rating
         track = {}
-        
+
         if self.current_song.type == 'library':
             track['id'] = self.current_song.id
-        
+
         else:
             track['nid'] = self.current_song.id
             track['trackType'] = self.current_song.trackType
-        
+
         self.g_api.rate_songs(track, rating)
         self.playbar.update()
         self.loop.draw_screen()
@@ -1451,23 +1454,23 @@ class App(urwid.Pile):
 
         self.g_api.logout()
         self.loop.stop()
-        
+
         if self.persist_queue:
             self.save_queue()
-        
+
         self.save_hist()
         sys.exit()
 
     def save_queue(self):
-        
+
         print("saving queue")
         queue = []
-        
+
         if self.current_song is not None:
             queue.append(self.current_song)
-        
+
         queue.extend(self.queue_panel.queue)
-        
+
         with open(join(CONFIG_DIR, 'queue.p'), 'wb') as f:
             pickle.dump(queue, f)
 
@@ -1476,7 +1479,7 @@ class App(urwid.Pile):
         try:
             with open(join(CONFIG_DIR, 'queue.p'), 'rb') as f:
                 self.queue_panel.add_songs_to_queue(pickle.load(f))
-        
+
         except (FileNotFoundError, pickle.UnpicklingError):
             print("failed to restore queue. :(")
 
@@ -1675,7 +1678,7 @@ class App(urwid.Pile):
 
             @property
             def CanPlay(self):
-                return (len(self.app.queue_panel.queue) > 0 or self.app.current_song is not None)
+                return len(self.app.queue_panel.queue) > 0 or self.app.current_song is not None
 
             @property
             def CanPause(self):
@@ -1775,7 +1778,7 @@ def main(debug=False, get_lastfm_token=False):
 
     print("starting up.")
     makedirs(CONFIG_DIR, exist_ok=True)
-    
+
     log_file = join(CONFIG_DIR, 'log.txt')
     logging.basicConfig(filename=log_file, filemode='w', level=logging.WARNING)
 
@@ -1812,7 +1815,7 @@ def main(debug=False, get_lastfm_token=False):
 
         try:
             loop.run()
-        
+
         except Exception as e:
             logging.exception(e)
             print("Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) for more information.")
