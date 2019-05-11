@@ -18,14 +18,14 @@ import hashlib
 from datetime import datetime
 
 WELCOME = '''
-   ▄             ▀       ▀
+   ▄             ▀       ▀               
  ▄▄█▄▄  ▄   ▄  ▄▄▄     ▄▄▄    ▄▄▄   ▄▄▄▄▄
    █    █   █    █       █   ▀   █  █ █ █
    █    █   █    █       █   ▄▀▀▀█  █ █ █
    ▀▄▄  ▀▄▄▀█  ▄▄█▄▄     █   ▀▄▄▀█  █ █ █
-                         █
-                       ▀▀
-         - A Google Music Player -
+                         █               
+                       ▀▀                
+         - A Google Music Player -       
 '''  # noqa
 
 CONFIG_DIR = join(expanduser('~'), '.config', 'tuijam')
