@@ -703,8 +703,8 @@ class PlayBar(urwid.ProgressBar):
         if progress >= 0 and total > 0:
             percent = progress / total * 100
             self.set_completion(percent)
-            if self.app.lastfm_enabled:
-                song = self.app.current_song
+            song = self.app.current_song
+            if self.app.lastfm_enabled and type(song) == Song:
                 if not song.lastfm_scrobbled and total >= 30 and (percent > 50 or progress > 4*60):
                     self.app.lastfm.scrobble_song(song)
 
