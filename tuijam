@@ -116,10 +116,14 @@ class LastFMAPI:
         # TODO error handle
 
     def update_now_playing_song(self, song):
-        self.update_now_playing(song.artist, song.title, song.album, song.length[1]*60 + song.length[0])
-        song.lastfm_ts_start = int(datetime.now().timestamp())
-        # ^ there could be a bug when tracks are scrobbled in the past or the future
-        #   (depends on timezone)
+        try:
+            self.update_now_playing(song.artist, song.title, song.album, song.length[1]*60 + song.length[0])
+            song.lastfm_ts_start = int(datetime.now().timestamp())
+            # ^ there could be a bug when tracks are scrobbled in the past or the future
+            #   (depends on timezone)
+        except Exception as e:
+            logging.exception("LASTFM: updateNowPlaying: " + e.__str__())
+            logging.error('LASTFM: updateNowPlaying: failed to update')
 
     def scrobble(self, artist, track, album, duration, ts_start):
         # See: https://www.last.fm/api/scrobbling#when-is-a-scrobble-a-scrobble
@@ -139,8 +143,13 @@ class LastFMAPI:
         logging.warning("LASTFM: scrobble: response = " + response.__str__())
 
     def scrobble_song(self, song):
-        self.scrobble(song.artist, song.title, song.album, song.length[1]*60 + song.length[0], song.lastfm_ts_start)
-        song.lastfm_scrobbled = True
+        try:
+            self.scrobble(song.artist, song.title, song.album, song.length[1]*60 + song.length[0], song.lastfm_ts_start)
+            song.lastfm_scrobbled = True
+        except Exception as e:
+            logging.exception("LASTFM: scrobble: " + e.__str__())
+            logging.error('LASTFM: scrobble: failed to scrobble')
+
 
 
 def sec_to_min_sec(sec_tot):
