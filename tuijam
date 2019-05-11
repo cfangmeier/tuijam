@@ -807,8 +807,8 @@ class QueuePanel(urwid.ListBox):
 
             logging.warning('LASTFM: play_next: scrobble enabled = ' + str(self.app.lastfm_enabled))
             logging.warning('LASTFM: play_next: song type = ' + str(type(next_song)))
+            next_song.lastfm_scrobbled = False
             if self.app.lastfm_enabled and type(next_song) == Song:
-                next_song.lastfm_scrobbled = False
                 self.app.lastfm.update_now_playing_song(next_song)
             self.app.play(next_song)
         
