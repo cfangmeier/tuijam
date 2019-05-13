@@ -1427,7 +1427,7 @@ class App(urwid.Pile):
 
     def rate_current_song(self, rating):
 
-        if self.current_song is None:
+        if type(self.current_song) != Song:
             return
 
         if self.current_song.rating == rating:
