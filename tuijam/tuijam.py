@@ -17,6 +17,8 @@ import requests
 import hashlib
 from datetime import datetime
 
+__version__ = "0.4.0"
+
 WELCOME = '''
    ▄             ▀       ▀               
  ▄▄█▄▄  ▄   ▄  ▄▄▄     ▄▄▄    ▄▄▄   ▄▄▄▄▄
@@ -44,7 +46,7 @@ class LastFMAPI:
     API_KEY = '5cc045ddea219f89adb7efec168d64ac'
     API_SECRET = '8397b63671b211c4e70f6ba1d8ea7825'
     API_ROOT_URL = 'http://ws.audioscrobbler.com/2.0/'
-    USER_AGENT = 'TUIJam/0.3.12'  # TODO construct user-agent based on version from setup.py
+    USER_AGENT = 'TUIJam/'+__version__
 
     def __init__(self, sk=None):
         # Initialize session key with None
@@ -1480,8 +1482,9 @@ class App(urwid.Pile):
             with open(join(CONFIG_DIR, 'queue.p'), 'rb') as f:
                 self.queue_panel.add_songs_to_queue(pickle.load(f))
 
-        except (FileNotFoundError, pickle.UnpicklingError):
+        except (AttributeError, FileNotFoundError, pickle.UnpicklingError):
             print("failed to restore queue. :(")
+            self.queue_panel.clear()
 
     def save_hist(self):
 
@@ -1498,7 +1501,7 @@ class App(urwid.Pile):
                     print("migrating from old version...")
                     self.history = list(self.history)
 
-        except (FileNotFoundError, pickle.UnpicklingError):
+        except (AttributeError, FileNotFoundError, pickle.UnpicklingError):
             print("failed to restore recently played. :(")
 
     def setup_mpris(self):
@@ -1774,7 +1777,7 @@ def lastfm_conf():
         print('Successfully authenticated.')
 
 
-def main(debug=False, get_lastfm_token=False):
+def main():
 
     print("starting up.")
     makedirs(CONFIG_DIR, exist_ok=True)
@@ -1782,7 +1785,7 @@ def main(debug=False, get_lastfm_token=False):
     log_file = join(CONFIG_DIR, 'log.txt')
     logging.basicConfig(filename=log_file, filemode='w', level=logging.WARNING)
 
-    if get_lastfm_token:
+    if 'get_lastfm_token' in sys.argv[1:]:
         lastfm_conf()
         exit(0)
 
@@ -1803,28 +1806,22 @@ def main(debug=False, get_lastfm_token=False):
         app.player['vid'] = 'auto'
     app.restore_hist()
 
-    if not debug:
+    import signal
+    signal.signal(signal.SIGINT, app.cleanup)
 
-        import signal
-        signal.signal(signal.SIGINT, app.cleanup)
+    loop = urwid.MainLoop(app, palette=app.palette,
+                          event_loop=urwid.GLibEventLoop())
+    app.loop = loop
+    loop.screen.set_terminal_properties(256)
 
-        loop = urwid.MainLoop(app, palette=app.palette,
-                              event_loop=urwid.GLibEventLoop())
-        app.loop = loop
-        loop.screen.set_terminal_properties(256)
+    try:
+        loop.run()
 
-        try:
-            loop.run()
-
-        except Exception as e:
-            logging.exception(e)
-            print("Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) for more information.")
-            app.cleanup()
-
-    return app
+    except Exception as e:
+        logging.exception(e)
+        print("Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) for more information.")
+        app.cleanup()
 
 
 if __name__ == '__main__':
-    debug = 'debug' in sys.argv[1:]
-    get_lastfm_token = 'get_lastfm_token' in sys.argv[1:]
-    app = main(debug=debug, get_lastfm_token=get_lastfm_token)
+    main()

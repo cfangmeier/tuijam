@@ -1,4 +1,5 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+from tuijam.tuijam import __version__
 
 import sys
 
@@ -14,7 +15,7 @@ with open('README.md') as f:
 
 setup(
     name='tuijam',
-    version='0.3.12',
+    version=__version__,
     description='A fancy TUI client for Google Play Music',
     long_description=desc,
     long_description_content_type='text/markdown',
@@ -35,7 +36,8 @@ setup(
     ],
     keywords='terminal music streaming',
     install_requires=requirements,
-    scripts=[
-        'tuijam',
-    ],
+    packages=find_packages(),
+    entry_points={
+        'console_scripts': ['tuijam=tuijam.tuijam:main'],
+    },
 )
