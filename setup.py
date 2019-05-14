@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from tuijam.tuijam import __version__
+from tuijam.app import __version__
 
 import sys
 
