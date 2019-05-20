@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from tuijam.app import __version__
+from tuijam import __version__
 
 import sys
 
@@ -38,6 +38,6 @@ setup(
     install_requires=requirements,
     packages=find_packages(),
     entry_points={
-        'console_scripts': ['tuijam=tuijam.tuijam:main'],
+        'console_scripts': ['tuijam=tuijam.app:main'],
     },
 )

@@ -262,14 +262,17 @@ class App(urwid.Pile):
         self.loop.set_alarm_in(dt, self.refresh)
 
     def play(self, song):
+        try:
+            if isinstance(song, Song):
+                song.stream_url = self.g_api.get_stream_url(song.id)
+            else:  # YTVideo
+                song.stream_url = f"https://youtu.be/{song.id}"
+        except Exception as e:
+            logging.exception(e)
+            return False
+
         self.current_song = song
         self.player.pause = True
-
-        if isinstance(song, Song):
-            self.current_song.stream_url = self.g_api.get_stream_url(song.id)
-        else:  # YTVideo
-            self.current_song.stream_url = f"https://youtu.be/{song.id}"
-
         self.player.play(self.current_song.stream_url)
         self.player.pause = False
         self.play_state = "play"
@@ -281,6 +284,7 @@ class App(urwid.Pile):
         if self.mpris:
             self.mpris.emit_property_changed("PlaybackStatus")
             self.mpris.emit_property_changed("Metadata")
+        return True
 
     def stop(self):
         try:

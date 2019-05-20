@@ -362,20 +362,15 @@ class QueuePanel(urwid.ListBox):
 
     def play_next(self):
 
-        if self.walker:
+        while self.walker:
             self.walker.pop(0)
             next_song = self.queue.pop(0)
 
-            logging.warning(
-                "LASTFM: play_next: scrobble enabled = "
-                + str(self.app.lastfm is not None)
-            )
-            logging.warning("LASTFM: play_next: song type = " + str(type(next_song)))
-            next_song.lastfm_scrobbled = False
-            if self.app.lastfm and isinstance(next_song, Song):
-                self.app.lastfm.update_now_playing_song(next_song)
-            self.app.play(next_song)
-
+            if self.app.play(next_song):
+                next_song.lastfm_scrobbled = False
+                if self.app.lastfm and isinstance(next_song, Song):
+                    self.app.lastfm.update_now_playing_song(next_song)
+                break
         else:
             self.app.current_song = None
             self.app.stop()
@@ -411,7 +406,7 @@ class QueuePanel(urwid.ListBox):
             self.to_bottom(focus_id)
             self.walker.set_focus(len(self.walker) - 1)
 
-        elif key in ("right"):
+        elif key in ("right",):
             self.play_next()
 
         elif key in ("delete", "x"):
