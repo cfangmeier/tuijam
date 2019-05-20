@@ -74,6 +74,9 @@ The player supports Last.fm scrobbling. To enable it, you need to run:
 tuijam get_lastfm_token
 ```
 
+# Queue and History
+
+The file format for the queue and history persistence features is in flux. Therefore, upgrading could result in losing the current queue and play history. This should stabilize in the near future.
 
 # Controls
   - `ctrl-c` quit
