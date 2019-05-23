@@ -2,7 +2,15 @@ import logging
 
 import urwid
 
-from .music_objects import Song, Artist, YTVideo, Album, Situation, RadioStation, Playlist
+from .music_objects import (
+    Song,
+    Artist,
+    YTVideo,
+    Album,
+    Situation,
+    RadioStation,
+    Playlist,
+)
 from .utility import sec_to_min_sec
 
 WELCOME = """
@@ -45,9 +53,7 @@ class SearchInput(urwid.Edit):
 
 
 class SearchPanel(urwid.ListBox):
-
     class SearchResults:
-
         def __init__(self, categories):
             self.artists = []
             self.albums = []
@@ -150,10 +156,7 @@ class SearchPanel(urwid.ListBox):
                 pass
 
     def update_search_results(
-        self,
-        *categories,
-        title="Search Results",
-        isprevsong=False,
+        self, *categories, title="Search Results", isprevsong=False
     ):
         if not self.viewing_previous_songs:  # only remember search history
             self.search_history.append((self.get_focus()[1], self.search_results))

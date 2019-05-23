@@ -1,4 +1,5 @@
-requests
+rsa>=4.0
+requests>=2.21.0
 gmusicapi==11.0.0
 urwid==2.0.1
 pyYAML>=4.2b1

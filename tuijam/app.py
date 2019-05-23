@@ -23,6 +23,7 @@ from .music_objects import (
 from .music_objects import serialize, deserialize
 from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar
 from tuijam import CONFIG_DIR
+from tuijam.utility import lookup_keys
 
 
 class App(urwid.Pile):
@@ -55,7 +56,7 @@ class App(urwid.Pile):
 
         from apiclient.discovery import build
 
-        developer_key = "AIzaSyBtETg1PDC124WUAZ5JhJH_pu2xboHVIS0"
+        developer_key, = lookup_keys("GOOGLE_DEVELOPER_KEY")
         self.youtube = build("youtube", "v3", developerKey=developer_key)
 
         @self.player.event_callback("end_file")
@@ -641,7 +642,7 @@ def main():
     parser.add_argument(
         "action", choices=["", "configure_last_fm"], default="", nargs="?"
     )
-    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("-v", "--verbose", action="store_true")  # TODO: use this
     args = parser.parse_args()
 
     print("starting up.")
@@ -652,6 +653,9 @@ def main():
 
     if args.action == "configure_last_fm":
         LastFMAPI.configure()
+        exit(0)
+    elif args.action != "":
+        print(f"Unrecognized option: {args.action}")
         exit(0)
 
     app = App()

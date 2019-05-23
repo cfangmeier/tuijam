@@ -6,18 +6,23 @@ import requests
 import yaml
 
 from tuijam import __version__, CONFIG_DIR
+from tuijam.utility import lookup_keys
 
 
 class LastFMAPI:
-    API_KEY = "5cc045ddea219f89adb7efec168d64ac"
-    API_SECRET = "8397b63671b211c4e70f6ba1d8ea7825"
+    API_KEY = None
+    API_SECRET = None
     API_ROOT_URL = "http://ws.audioscrobbler.com/2.0/"
     USER_AGENT = "TUIJam/" + __version__
 
     def __init__(self, sk=None):
         # Initialize session key with None
         self.sk = sk
-        pass
+
+        if LastFMAPI.API_KEY is None or LastFMAPI.API_SECRET is None:
+            LastFMAPI.API_KEY, LastFMAPI.API_SECRET = lookup_keys(
+                "LASTFM_API_KEY", "LASTFM_API_SECRET"
+            )
 
     def call_method(self, method_name: str, params=None) -> dict:
         # Construct API request parameters dict
