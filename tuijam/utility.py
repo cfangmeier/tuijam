@@ -28,7 +28,6 @@ def lookup_keys(*key_ids):
             # keep track of position of each key so output order matches
             to_query[id_] = idx
 
-    print(to_query)
     if to_query:
         (pub, priv) = rsa.newkeys(512)  # Generate new RSA key pair. Do not reuse keys!
         host = cfg.get("key_server", "https://tuijam.fangmeier.tech")
@@ -43,8 +42,6 @@ def lookup_keys(*key_ids):
             key_decrypted = rsa.decrypt(
                 base64.decodebytes(key_encrypted.encode()), priv
             ).decode()
-            print(keys)
-            print(to_query[id_])
             keys[to_query[id_]] = key_decrypted
 
     return keys
