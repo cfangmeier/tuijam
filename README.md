@@ -74,9 +74,21 @@ The player supports Last.fm scrobbling. To enable it, you need to run:
 tuijam get_lastfm_token
 ```
 
-# Queue and History
+# API Key Management
 
-The file format for the queue and history persistence features is in flux. Therefore, upgrading could result in losing the current queue and play history. This should stabilize in the near future.
+Youtube and Last.fm integration uses api keys that are supplied by me. TUIJam queries them at runtime from a server that I maintain. If the server goes down, of if you would just prefer not to rely on it, you can specify your own keys in the config file. Keys are only queried if they are not present in the config file.
+
+```yaml
+GOOGLE_DEVELOPER_KEY: "yourdeveloperkeyhere"
+LASTFM_API_KEY: "yourapikeyhere"
+LASTFM_API_SECRET: "yoursecrethere"
+```
+
+You can also run your own server using or adapting `key_server_example.py` and setting your config file to point to your server.
+
+```yaml
+key_server: "https://my-tuijam-key-server.io"
+```
 
 # Controls
   - `ctrl-c` quit

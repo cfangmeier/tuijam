@@ -22,7 +22,7 @@ from .music_objects import (
 )
 from .music_objects import serialize, deserialize
 from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar
-from tuijam import CONFIG_DIR
+from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE
 from tuijam.utility import lookup_keys
 
 
@@ -121,14 +121,13 @@ class App(urwid.Pile):
             return self.g_api.login(*credentials)
 
     def read_config(self):
-        config_file = join(CONFIG_DIR, "config.yaml")
 
-        if not isfile(config_file):
+        if not isfile(CONFIG_FILE):
             if not self.first_time_setup():
                 return
 
         email, password, device_id = None, None, None
-        with open(config_file) as f:
+        with open(CONFIG_FILE) as f:
             config = yaml.safe_load(f.read())
 
             if config.get("encrypted", False):
@@ -226,9 +225,7 @@ class App(urwid.Pile):
         data["reverse_scrolling"] = False
         data["video"] = False
 
-        config_file = join(CONFIG_DIR, "config.yaml")
-
-        with open(config_file, "w") as outfile:
+        with open(CONFIG_FILE, "w") as outfile:
             yaml.safe_dump(data, outfile, default_flow_style=False)
 
     def get_device_id(self, email, password):
@@ -607,12 +604,12 @@ class App(urwid.Pile):
 
         queue.extend(self.queue_panel.queue)
 
-        with open(join(CONFIG_DIR, "queue.json"), "w") as f:
+        with open(QUEUE_FILE, "w") as f:
             f.write(serialize(queue))
 
     def restore_queue(self):
         try:
-            with open(join(CONFIG_DIR, "queue.json"), "r") as f:
+            with open(QUEUE_FILE, "r") as f:
                 self.queue_panel.add_songs_to_queue(deserialize(f.read()))
 
         except (AttributeError, FileNotFoundError) as e:
@@ -621,12 +618,12 @@ class App(urwid.Pile):
             self.queue_panel.clear()
 
     def save_history(self):
-        with open(join(CONFIG_DIR, "hist.json"), "w") as f:
+        with open(HISTORY_FILE, "w") as f:
             f.write(serialize(self.history))
 
     def restore_history(self):
         try:
-            with open(join(CONFIG_DIR, "hist.json"), "r") as f:
+            with open(HISTORY_FILE, "r") as f:
                 self.history = deserialize(f.read())
         except (AttributeError, FileNotFoundError) as e:
             logging.exception(e)
