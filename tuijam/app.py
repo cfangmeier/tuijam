@@ -52,12 +52,9 @@ class App(urwid.Pile):
         self.config_pw = None
         self.reached_end_of_track = False
         self.lastfm = None
+        self.youtube = None
         self.mpris = None
 
-        from apiclient.discovery import build
-
-        developer_key, = lookup_keys("GOOGLE_DEVELOPER_KEY")
-        self.youtube = build("youtube", "v3", developerKey=developer_key)
 
         @self.player.event_callback("end_file")
         def end_file_callback(event):
@@ -169,6 +166,10 @@ class App(urwid.Pile):
             if self.lastfm_sk is not None:
                 self.lastfm = LastFMAPI(self.lastfm_sk)
                 # TODO handle if sk is invalid
+
+            from apiclient.discovery import build
+            developer_key, = lookup_keys("GOOGLE_DEVELOPER_KEY")
+            self.youtube = build("youtube", "v3", developerKey=developer_key)
 
         return email, password, device_id
 

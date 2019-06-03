@@ -1,6 +1,6 @@
 from os.path import join, expanduser
 
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 CONFIG_DIR = join(expanduser("~"), ".config", "tuijam")
 CONFIG_FILE = join(CONFIG_DIR, "config.yaml")
 LOG_FILE = join(CONFIG_DIR, "log.txt")
