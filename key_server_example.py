@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 
 @app.route("/", methods=["POST"])
-def submit_person():
+def query():
     req_data = request.json
     pub_key = rsa.PublicKey.load_pkcs1(req_data["public_key"])
     keys = {}
