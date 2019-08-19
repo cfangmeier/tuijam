@@ -34,7 +34,7 @@ yay -S tuijam-git # dev build
 
 The first time TUIJam runs, it will perform an OAuth handshake with Google. Tokens are then stored locally and subsequent logins should be automatic.
 
-## Configuration
+# Configuration
 
 Local configuration is stored in `$HOME/.config/tuijam/config.yaml`.
 
