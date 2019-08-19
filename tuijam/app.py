@@ -2,7 +2,6 @@
 # coding=utf-8
 from os.path import join, isfile
 from os import makedirs
-from getpass import getpass
 import sys
 
 import urwid
@@ -22,7 +21,7 @@ from .music_objects import (
 )
 from .music_objects import serialize, deserialize
 from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar
-from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE
+from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE, CRED_FILE
 from tuijam.utility import lookup_keys
 
 
@@ -110,141 +109,54 @@ class App(urwid.Pile):
 
     def login(self):
         self.g_api = gmusicapi.Mobileclient(debug_logging=False)
-        credentials = self.read_config()
+        self.load_config()
 
-        if credentials is None:
-            return False
-        else:
-            return self.g_api.login(*credentials)
+        if not isfile(CRED_FILE):
+            from oauth2client.client import FlowExchangeError
+            print("No local credentials file found.")
+            print("TUIJam will now open a browser window so you can provide")
+            print("permission for TUIJam to access your Google Play Music account.")
+            input("Press enter to continue.")
+            try:
+                self.g_api.perform_oauth(CRED_FILE, open_browser=True)
+            except FlowExchangeError:
+                raise RuntimeError('Oauth authentication Failed.')
 
-    def read_config(self):
+        self.g_api.oauth_login(self.g_api.FROM_MAC_ADDRESS, CRED_FILE)
 
+        if self.lastfm_sk is not None:
+            self.lastfm = LastFMAPI(self.lastfm_sk)
+            # TODO handle if sk is invalid
+
+        from apiclient.discovery import build
+        developer_key, = lookup_keys("GOOGLE_DEVELOPER_KEY")
+        self.youtube = build("youtube", "v3", developerKey=developer_key)
+
+    def load_config(self):
         if not isfile(CONFIG_FILE):
-            if not self.first_time_setup():
-                return
+            self.write_default_config()
 
-        email, password, device_id = None, None, None
         with open(CONFIG_FILE) as f:
             config = yaml.safe_load(f.read())
 
-            if config.get("encrypted", False):
-                from scrypt import decrypt
-
-                if self.config_pw is not None:
-                    config_pw = self.config_pw  # From first_time_setup
-
-                else:
-                    config_pw = getpass("Enter tuijam config pw: ")
-
-                try:
-                    email = decrypt(config["email"], config_pw, maxtime=20)
-                    password = decrypt(config["password"], config_pw, maxtime=20)
-                    device_id = decrypt(config["device_id"], config_pw, maxtime=20)
-                    lastfm_sk_encrypted = config.get("lastfm_sk", None)
-                    self.lastfm_sk = None
-                    if lastfm_sk_encrypted:
-                        self.lastfm_sk = decrypt(
-                            lastfm_sk_encrypted, config_pw, maxtime=20
-                        )
-
-                except Exception as e:
-                    print(e)
-                    print("Could not decrypt config file.")
-                    exit(1)
-
-            else:
-                email = config["email"]
-                password = config["password"]
-                device_id = config["device_id"]
-                self.lastfm_sk = config.get("lastfm_sk", None)
+            self.lastfm_sk = config.get("lastfm_sk", None)
 
             self.mpris_enabled = config.get("mpris_enabled", True)
             self.persist_queue = config.get("persist_queue", True)
             self.reverse_scrolling = config.get("reverse_scrolling", False)
             self.video = config.get("video", False)
 
-            if self.lastfm_sk is not None:
-                self.lastfm = LastFMAPI(self.lastfm_sk)
-                # TODO handle if sk is invalid
-
-            from apiclient.discovery import build
-            developer_key, = lookup_keys("GOOGLE_DEVELOPER_KEY")
-            self.youtube = build("youtube", "v3", developerKey=developer_key)
-
-        return email, password, device_id
-
-    def first_time_setup(self):
-        print("Need to perform first time setup")
-
-        while True:
-            email = input("Enter gmusic email (empty to quit): ")
-            if not email:
-                return False
-
-            pw = getpass("Enter gmusic password: ")
-            d_id = self.get_device_id(email, pw)
-
-            if d_id is not None:
-                break  # Success!
-
-            print(
-                (
-                    "Login failed, verify your email and password.\n"
-                    "Remember, you need an app-password if you have 2FA enabled."
-                )
-            )
-
-        print("Enter a password to encrypt/decrypt the generated config file.")
-        print("You will need to enter this each time you start tuijam.")
-        print("If you forget this, delete the config file and start tuijam.")
-        print("Leave blank if no encryption is desired.")
-
-        self.config_pw = getpass("password: ")
-
-        print()
-        self.write_config(email, pw, d_id, self.config_pw)
-        return True
 
     @staticmethod
-    def write_config(email, password, device_id, config_pw):
-        if len(config_pw) > 0:
-            from scrypt import encrypt
-
-            data = dict(
-                encrypted=True,
-                email=encrypt(email, config_pw, maxtime=0.5),
-                password=encrypt(password, config_pw, maxtime=0.5),
-                device_id=encrypt(device_id, config_pw, maxtime=0.5),
-            )
-        else:
-            data = dict(
-                encrypted=False, email=email, password=password, device_id=device_id
-            )
-
-        data["mpris_enabled"] = True
-        data["persist_queue"] = True
-        data["reverse_scrolling"] = False
-        data["video"] = False
+    def write_default_config():
+        cfg = {}
+        cfg["mpris_enabled"] = True
+        cfg["persist_queue"] = True
+        cfg["reverse_scrolling"] = False
+        cfg["video"] = False
 
         with open(CONFIG_FILE, "w") as outfile:
-            yaml.safe_dump(data, outfile, default_flow_style=False)
-
-    def get_device_id(self, email, password):
-        if not self.g_api.login(email, password, self.g_api.FROM_MAC_ADDRESS):
-            return
-
-        ids = [
-            d["id"][2:] if d["id"].startswith("0x") else d["id"].replace(":", "")
-            for d in self.g_api.get_registered_devices()
-        ]
-
-        self.g_api.logout()
-
-        try:
-            return ids[0]
-        except IndexError:
-            print("No device ids found. This shouldn't happen...")
-            return
+            yaml.safe_dump(cfg, outfile, default_flow_style=False)
 
     def refresh(self, *args, **kwargs):
         if self.play_state == "play" and self.reached_end_of_track:
@@ -658,8 +570,7 @@ def main():
 
     app = App()
     print("logging in.")
-    if not app.login():
-        return
+    app.login()
 
     if app.mpris_enabled:
         from .mpris import setup_mpris
@@ -673,14 +584,13 @@ def main():
         print("restoring queue")
         app.restore_queue()
 
-    if app.video:
-        app.player["vid"] = "auto"
-
     print("restoring history")
     app.restore_history()
 
-    import signal
+    if app.video:
+        app.player["vid"] = "auto"
 
+    import signal
     signal.signal(signal.SIGINT, app.cleanup)
 
     loop = urwid.MainLoop(app, palette=app.palette, event_loop=urwid.GLibEventLoop())

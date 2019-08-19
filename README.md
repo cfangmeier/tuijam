@@ -30,19 +30,13 @@ yay -S tuijam  # mainline
 yay -S tuijam-git # dev build
 ```
 
-# Configuration
-When you first launch TUIJam, it checks for a config file in `$HOME/.config/tuijam/config.yaml` with the following content:
-```yaml
-email: you@your-email.com
-password: your-password
-device_id: yourdeviceid
-```
-If this file doesn't exist, TUIJam will guide you through a first-time setup where you will need to supply your google music email, password, and (optionally) a separate password to encrypt your google credentials locally.
+# First Time Setup
 
-Note that if you have 2-factor setup on your Google account, you need to make
-an app-password for TUIJam.
+The first time TUIJam runs, it will perform an OAuth handshake with Google. Tokens are then stored locally and subsequent logins should be automatic.
 
-## Additional Configuration
+## Configuration
+
+Local configuration is stored in `$HOME/.config/tuijam/config.yaml`.
 
   - `persist_queue`: (Default: `True`) Saves the current queue and reloads it when the app resumes
   - `reverse_scrolling`: (Default: `False`) Switches the direction of mouse scrolling
