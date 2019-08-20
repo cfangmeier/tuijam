@@ -290,7 +290,7 @@ class App(urwid.Pile):
         elif key == "ctrl w":
             self.queue_panel.clear()
         elif key == "ctrl q":
-            self.queue_panel.add_songs_to_queue(self.search_panel.search_results[0])
+            self.queue_panel.add_songs_to_queue(self.search_panel.search_results.songs)
         elif self.focus != self.search_input:
             if key == ">":
                 self.seek(10)
@@ -428,7 +428,7 @@ class App(urwid.Pile):
         situations = self.g_api.get_listen_now_situations()
         items = self.g_api.get_listen_now_items()
         playlists = self.g_api.get_all_user_playlist_contents()
-        liked = self.g_api.get_promoted_songs()
+        liked = self.g_api.get_top_songs()
 
         situations = [Situation.from_dict(hit) for hit in situations]
         albums = [Album.from_dict(hit["album"]) for hit in items if "album" in hit]
