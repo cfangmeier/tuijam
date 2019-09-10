@@ -41,6 +41,46 @@ Local configuration is stored in `$HOME/.config/tuijam/config.yaml`.
   - `persist_queue`: (Default: `True`) Saves the current queue and reloads it when the app resumes
   - `reverse_scrolling`: (Default: `False`) Switches the direction of mouse scrolling
 
+Control keys and their defaults are listed below. Any of these can be added to the configuration file to override the default values.
+
+```yaml
+controls:
+    queue: "q"
+    queue_next: "Q"
+    expand: ["e", "enter"]
+    back: "backspace",
+    radio: "r",
+    # queue panel
+    swap_up: ["u", "shift up"],
+    swap_down: ["d", "shift down"],
+    to_top: ["U", "ctrl up"],
+    to_bottom: ["D", "ctrl down"],
+    remove: ["delete", "x"],
+    play_pause: " ",
+    # search and queue panel
+    down: "j",
+    up: "k",
+    expand: ["e", "enter"],
+    seek_pos: ">",
+    seek_neg: "<",
+    vol_up: ["+", "="],
+    vol_down: ["-", "_"],
+    focus_search: ["ctrl f", "/"],
+    # global inputs
+    # Avoid single letter/number/symb keys to work with search input focused.
+    g_focus_next: "tab",
+    g_focus_prev: "shift tab",
+    g_play_pause: "ctrl p",
+    g_stop: "ctrl k",
+    g_play_next: "ctrl n",
+    g_recent: "ctrl r",
+    g_shuffle: "ctrl s",
+    g_rate_good: "ctrl u",
+    g_rate_bad: "ctrl d",
+    g_clear_queue: "ctrl w",
+    g_queue_all: "ctrl q",
+```
+
 # MPRIS Support
 TUIJam supports a subset of the [MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/) spec to allow for external control via clients such as [playerctl](https://github.com/acrisci/playerctl). Currently, the following behavior is supported:
 
@@ -85,6 +125,9 @@ key_server: "https://my-tuijam-key-server.io"
 ```
 
 # Controls
+
+The default control keys are listed below with short descriptions. However, many of these can be overridden by specifying alternative keys in the configuration file.
+
   - `ctrl-c` quit
   - `ctrl-p` toggle play/pause
   - `ctrl-k` stop
@@ -116,6 +159,7 @@ key_server: "https://my-tuijam-key-server.io"
   - In input window,
     - Type search query and press enter. Results are shown in search window.
     - Enter an empty query to view the suggested "Listen Now" stations and albums.
+
 
 
 # Thanks

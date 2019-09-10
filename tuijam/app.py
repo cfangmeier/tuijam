@@ -20,7 +20,7 @@ from .music_objects import (
     YTVideo,
 )
 from .music_objects import serialize, deserialize
-from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar
+from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar, controls
 from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE, CRED_FILE
 from tuijam.utility import lookup_keys
 
@@ -150,6 +150,11 @@ class App(urwid.Pile):
         with open(CONFIG_FILE) as f:
             config = yaml.safe_load(f.read())
 
+            controls.update(config.get('controls', {}))
+            for k, v in controls.items():
+                if type(v) is str:
+                    controls[k] = [v]
+
             self.lastfm_sk = config.get("lastfm_sk", None)
 
             self.mpris_enabled = config.get("mpris_enabled", True)
@@ -254,7 +259,7 @@ class App(urwid.Pile):
             self.mpris.emit_property_changed("Volume")
 
     def keypress(self, size, key):
-        if key == "tab":
+        if key in controls["g_focus_next"]:
             current_focus = self.focus
             if current_focus == self.search_panel_wrapped:
                 self.set_focus(self.queue_panel_wrapped)
@@ -262,7 +267,7 @@ class App(urwid.Pile):
                 self.set_focus(self.search_input)
             else:
                 self.set_focus(self.search_panel_wrapped)
-        elif key == "shift tab":
+        elif key in controls["g_focus_prev"]:
             current_focus = self.focus
             if current_focus == self.search_panel_wrapped:
                 self.set_focus(self.search_input)
@@ -270,36 +275,36 @@ class App(urwid.Pile):
                 self.set_focus(self.search_panel_wrapped)
             else:
                 self.set_focus(self.queue_panel_wrapped)
-        elif key == "ctrl p":
+        elif key in controls["g_play_pause"]:
             self.toggle_play()
-        elif key == "ctrl k":
+        elif key in controls["g_stop"]:
             self.stop()
-        elif key == "ctrl n":
+        elif key in controls["g_play_next"]:
             self.queue_panel.play_next()
-        elif key == "ctrl r":
+        elif key in controls["g_recent"]:
             hist_songs = [item for item in self.history if isinstance(item, Song)]
             hist_yt = [item for item in self.history if isinstance(item, YTVideo)]
             self.search_panel.view_previous_songs(hist_songs, hist_yt)
-        elif key == "ctrl s":
+        elif key in controls["g_shuffle"]:
             self.queue_panel.shuffle()
-        elif key == "ctrl u":
+        elif key in controls["g_rate_good"]:
             self.rate_current_song(5)
-        elif key == "ctrl d":
+        elif key in controls["g_rate_bad"]:
             self.rate_current_song(1)
-        elif key == "ctrl w":
+        elif key in controls["g_clear_queue"]:
             self.queue_panel.clear()
-        elif key == "ctrl q":
+        elif key in controls["g_queue_all"]:
             self.queue_panel.add_songs_to_queue(self.search_panel.search_results.songs)
         elif self.focus != self.search_input:
-            if key == ">":
+            if key in controls["seek_pos"]:
                 self.seek(10)
-            elif key == "<":
+            elif key in controls["seek_neg"]:
                 self.seek(-10)
-            elif key in "-_":
+            elif key in controls["vol_down"]:
                 self.volume_down()
-            elif key in "+=":
+            elif key in controls["vol_up"]:
                 self.volume_up()
-            elif key in ("/", "ctrl f"):
+            elif key in controls["focus_search"]:
                 self.set_focus(self.search_input)
             else:
                 return self.focus.keypress(size, key)

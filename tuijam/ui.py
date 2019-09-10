@@ -1,5 +1,4 @@
 import logging
-
 import urwid
 
 from .music_objects import (
@@ -32,6 +31,43 @@ RATE_UI = {
     4: "▲",  # Legacy
     5: "▲",  # Thumbs up
 }
+
+controls = dict(
+    # search panel
+    queue="q",
+    queue_next="Q",
+    back="backspace",
+    radio="r",
+    # queue panel
+    swap_up=["u", "shift up"],
+    swap_down=["d", "shift down"],
+    to_top=["U", "ctrl up"],
+    to_bottom=["D", "ctrl down"],
+    remove=["delete", "x"],
+    play_pause=" ",
+    # search and queue panel
+    down="j",
+    up="k",
+    expand=["e", "enter"],
+    seek_pos=">",
+    seek_neg="<",
+    vol_up=["+", "="],
+    vol_down=["-", "_"],
+    focus_search=["ctrl f", "/"],
+    # global inputs
+    # Avoid single letter/number/symb keys to work with search input focused.
+    g_focus_next="tab",
+    g_focus_prev="shift tab",
+    g_play_pause="ctrl p",
+    g_stop="ctrl k",
+    g_play_next="ctrl n",
+    g_recent="ctrl r",
+    g_shuffle="ctrl s",
+    g_rate_good="ctrl u",
+    g_rate_bad="ctrl d",
+    g_clear_queue="ctrl w",
+    g_queue_all="ctrl q",
+)
 
 
 class SearchInput(urwid.Edit):
@@ -102,9 +138,9 @@ class SearchPanel(urwid.ListBox):
         self.walker.append(urwid.Text(WELCOME, align="center"))
 
     def keypress(self, size, key):
-        if key == "q" or key == "Q":
+        if key in controls['queue'] or key in controls['queue_next']:
 
-            add_to_front = key == "Q"
+            add_to_front = key in controls['queue_next']
             selected = self.selected_search_obj()
 
             if not selected:
@@ -127,17 +163,17 @@ class SearchPanel(urwid.ListBox):
             elif type(selected) == Playlist:
                 self.app.queue_panel.add_songs_to_queue(selected.songs, add_to_front)
 
-        elif key in ("e", "enter"):
+        elif key in controls["expand"]:
             if self.selected_search_obj() is not None:
                 self.app.expand(self.selected_search_obj())
-        elif key == "backspace":
+        elif key in controls["back"]:
             self.back()
-        elif key == "r":
+        elif key in controls["radio"]:
             if self.selected_search_obj() is not None:
                 self.app.create_radio_station(self.selected_search_obj())
-        elif key == "j":
+        elif key in controls["down"]:
             super().keypress(size, "down")
-        elif key == "k":
+        elif key in controls["up"]:
             super().keypress(size, "up")
         else:
             super().keypress(size, key)
@@ -393,38 +429,35 @@ class QueuePanel(urwid.ListBox):
         if focus_id is None:
             return super().keypress(size, key)
 
-        if key in ("u", "shift up"):
+        if key in controls["swap_up"]:
             self.swap(focus_id, focus_id - 1)
             self.keypress(size, "up")
 
-        elif key in ("d", "shift down"):
+        elif key in controls["swap_down"]:
             self.swap(focus_id, focus_id + 1)
             self.keypress(size, "down")
 
-        elif key in ("v", "U", "ctrl up"):
+        elif key in controls["to_top"]:
             self.to_top(focus_id)
             self.walker.set_focus(0)
 
-        elif key in ("D", "ctrl down"):
+        elif key in controls["to_bottom"]:
             self.to_bottom(focus_id)
             self.walker.set_focus(len(self.walker) - 1)
 
-        elif key in ("right",):
-            self.play_next()
-
-        elif key in ("delete", "x"):
+        elif key in controls['remove']:
             self.drop(focus_id)
 
-        elif key == "j":
+        elif key in controls["down"]:
             super().keypress(size, "down")
 
-        elif key == "k":
+        elif key in controls["up"]:
             super().keypress(size, "up")
 
-        elif key == "e":
+        elif key in controls["expand"]:
             self.app.expand(self.selected_queue_obj())
 
-        elif key == " ":
+        elif key in controls["play_pause"]:
 
             if self.app.play_state == "stop":
                 self.play_next()
