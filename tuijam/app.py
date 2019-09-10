@@ -54,7 +54,6 @@ class App(urwid.Pile):
         self.youtube = None
         self.mpris = None
 
-
         @self.player.event_callback("end_file")
         def end_file_callback(event):
 
@@ -113,6 +112,7 @@ class App(urwid.Pile):
 
         if not isfile(CRED_FILE):
             from oauth2client.client import FlowExchangeError
+
             print("No local credentials file found.")
             print("TUIJam will now open a browser window so you can provide")
             print("permission for TUIJam to access your Google Play Music account.")
@@ -120,7 +120,7 @@ class App(urwid.Pile):
             try:
                 self.g_api.perform_oauth(CRED_FILE, open_browser=True)
             except FlowExchangeError:
-                raise RuntimeError('Oauth authentication Failed.')
+                raise RuntimeError("Oauth authentication Failed.")
 
         self.g_api.oauth_login(self.g_api.FROM_MAC_ADDRESS, CRED_FILE)
 
@@ -129,12 +129,23 @@ class App(urwid.Pile):
             # TODO handle if sk is invalid
 
         from apiclient.discovery import build
+
         developer_key, = lookup_keys("GOOGLE_DEVELOPER_KEY")
         self.youtube = build("youtube", "v3", developerKey=developer_key)
 
     def load_config(self):
         if not isfile(CONFIG_FILE):
-            self.write_default_config()
+            with open(CONFIG_FILE, "w") as outfile:
+                yaml.safe_dump(
+                    dict(
+                        mpris_enabled=True,
+                        persist_queue=True,
+                        reverse_scrolling=False,
+                        video=False,
+                    ),
+                    outfile,
+                    default_flow_style=False,
+                )
 
         with open(CONFIG_FILE) as f:
             config = yaml.safe_load(f.read())
@@ -145,18 +156,6 @@ class App(urwid.Pile):
             self.persist_queue = config.get("persist_queue", True)
             self.reverse_scrolling = config.get("reverse_scrolling", False)
             self.video = config.get("video", False)
-
-
-    @staticmethod
-    def write_default_config():
-        cfg = {}
-        cfg["mpris_enabled"] = True
-        cfg["persist_queue"] = True
-        cfg["reverse_scrolling"] = False
-        cfg["video"] = False
-
-        with open(CONFIG_FILE, "w") as outfile:
-            yaml.safe_dump(cfg, outfile, default_flow_style=False)
 
     def refresh(self, *args, **kwargs):
         if self.play_state == "play" and self.reached_end_of_track:
@@ -410,7 +409,6 @@ class App(urwid.Pile):
         return nexttok, videos
 
     def search(self, query):
-
         results = self.g_api.search(query)
 
         songs = [Song.from_dict(hit["track"]) for hit in results["song_hits"]]
@@ -424,7 +422,6 @@ class App(urwid.Pile):
         self.set_focus(self.search_panel_wrapped)
 
     def listen_now(self):
-
         situations = self.g_api.get_listen_now_situations()
         items = self.g_api.get_listen_now_items()
         playlists = self.g_api.get_all_user_playlist_contents()
@@ -448,19 +445,14 @@ class App(urwid.Pile):
         self.set_focus(self.search_panel_wrapped)
 
     def create_radio_station(self, obj):
-
         if isinstance(obj, Song):
             station_id = self.g_api.create_station(obj.title, track_id=obj.id)
-
         elif isinstance(obj, Album):
             station_id = self.g_api.create_station(obj.title, album_id=obj.id)
-
         elif isinstance(obj, Artist):
             station_id = self.g_api.create_station(obj.name, artist_id=obj.id)
-
         elif isinstance(obj, RadioStation):
             station_id = obj.get_station_id(self.g_api)
-
         else:
             return
 
@@ -468,12 +460,10 @@ class App(urwid.Pile):
             self.queue_panel.add_song_to_queue(song)
 
     def get_radio_songs(self, station_id, n=50):
-
         song_dicts = self.g_api.get_station_tracks(station_id, num_tracks=n)
         return [Song.from_dict(song_dict) for song_dict in song_dicts]
 
     def rate_current_song(self, rating):
-
         if type(self.current_song) != Song:
             return
 
@@ -495,7 +485,6 @@ class App(urwid.Pile):
         self.loop.draw_screen()
 
     def cleanup(self, *args, **kwargs):
-
         self.player.quit()
         del self.player
 
@@ -591,6 +580,7 @@ def main():
         app.player["vid"] = "auto"
 
     import signal
+
     signal.signal(signal.SIGINT, app.cleanup)
 
     loop = urwid.MainLoop(app, palette=app.palette, event_loop=urwid.GLibEventLoop())
