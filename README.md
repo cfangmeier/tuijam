@@ -84,21 +84,28 @@ You can also run your own server using or adapting `key_server_example.py` and s
 key_server: "https://my-tuijam-key-server.io"
 ```
 
+# VIM-Mode
+Enables vim style controls. By default, this mode is disabled, but this can be changed by adding the following line to the config file:
+
+```yaml
+vim: true
+```
+
 # Controls
-  - `ctrl-c` quit
-  - `ctrl-p` toggle play/pause
-  - `ctrl-k` stop
-  - `ctrl-q` add all songs in search result to queue
-  - `ctrl-n` move to next song
-  - `ctrl-r` view recently played songs
+  - `ctrl-c` Quit
+  - `ctrl-p` Toggle play/pause
+  - `ctrl-k` Stop
+  - `ctrl-q` Add all songs in search result to queue
+  - `ctrl-n` Move to next song
+  - `ctrl-r` View recently played songs
   - `ctrl-w` Clear the current queue
-  - `ctrl-s` shuffle queued songs (Note: If this hangs, try running `stty -ixon` in your terminal and restarting `tuijam`)
+  - `ctrl-s` Shuffle queued songs (Note: If this hangs, try running `stty -ixon` in your terminal and restarting `tuijam`)
   - `ctrl-u` Thumbs up the currently playing song
   - `ctrl-d` Thumbs down the currently playing song
-  - `>` seek forward 10 seconds
-  - `<` seek backwards 10 seconds
-  - `+` volume up
-  - `-` volume down
+  - `>` Seek forward 10 seconds
+  - `<` Seek backwards 10 seconds
+  - `+` Volume up
+  - `-` Volume down
   - `tab`/`shift-tab` cycle focus through search/queue/input windows
   - `\`/`ctrl-f` move to search bar
   - In search window,
@@ -108,14 +115,27 @@ key_server: "https://my-tuijam-key-server.io"
     - `e` view information about selected song/album/artist
     - `backspace` go back in search/expand history
   - In queue window,
-    - `u`/`shift-up` move selected song up in queue
-    - `d`/`shift-down` move selected song down in queue
-    - `shift-u`/`v`/`ctrl-up` move selected song to the top in queue
-    - `shift-d`/`ctrl-down` move selected song to the bottom in queue
-    - `delete`/`x` remove selected song from queue
+    - `u`/`shift-up` Move selected song up in queue
+    - `d`/`shift-down` Move selected song down in queue
+    - `shift-u`/`v`/`ctrl-up` Move selected song to the top in queue
+    - `shift-d`/`ctrl-down` Move selected song to the bottom in queue
+    - `delete`/`x` Remove selected song from queue
   - In input window,
     - Type search query and press enter. Results are shown in search window.
     - Enter an empty query to view the suggested "Listen Now" stations and albums.
+  - In VIM-mode, these controls will change to
+    - `i` Insert mode
+    - `esc` Leave insert mode
+    - `p` Toggle play/pause
+    - `k` Stop
+    - `q` Add all songs in search result to queue
+    - `n` Move to next song
+    - `w` Clear the current queue
+    - `s` Shuffle queued songs (Note: If this hangs, try running `stty -ixon` in your terminal and restarting `tuijam`)
+    - `t` Thumbs down the currently playing song
+    - `shift-t` Thumbs up the currently playing song
+    - `shift-r` View recently played songs
+
 
 
 # Thanks

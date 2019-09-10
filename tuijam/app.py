@@ -53,6 +53,8 @@ class App(urwid.Pile):
         self.lastfm = None
         self.youtube = None
         self.mpris = None
+        self.vim = None
+        self.vim_insert = False
 
 
         @self.player.event_callback("end_file")
@@ -145,6 +147,7 @@ class App(urwid.Pile):
             self.persist_queue = config.get("persist_queue", True)
             self.reverse_scrolling = config.get("reverse_scrolling", False)
             self.video = config.get("video", False)
+            self.vim = config.get("vim", False)
 
 
     @staticmethod
@@ -154,6 +157,7 @@ class App(urwid.Pile):
         cfg["persist_queue"] = True
         cfg["reverse_scrolling"] = False
         cfg["video"] = False
+        cfg["vim"] = False
 
         with open(CONFIG_FILE, "w") as outfile:
             yaml.safe_dump(cfg, outfile, default_flow_style=False)
@@ -255,6 +259,7 @@ class App(urwid.Pile):
             self.mpris.emit_property_changed("Volume")
 
     def keypress(self, size, key):
+        vim_insert_cache = self.vim_insert
         if key == "tab":
             current_focus = self.focus
             if current_focus == self.search_panel_wrapped:
@@ -271,26 +276,6 @@ class App(urwid.Pile):
                 self.set_focus(self.search_panel_wrapped)
             else:
                 self.set_focus(self.queue_panel_wrapped)
-        elif key == "ctrl p":
-            self.toggle_play()
-        elif key == "ctrl k":
-            self.stop()
-        elif key == "ctrl n":
-            self.queue_panel.play_next()
-        elif key == "ctrl r":
-            hist_songs = [item for item in self.history if isinstance(item, Song)]
-            hist_yt = [item for item in self.history if isinstance(item, YTVideo)]
-            self.search_panel.view_previous_songs(hist_songs, hist_yt)
-        elif key == "ctrl s":
-            self.queue_panel.shuffle()
-        elif key == "ctrl u":
-            self.rate_current_song(5)
-        elif key == "ctrl d":
-            self.rate_current_song(1)
-        elif key == "ctrl w":
-            self.queue_panel.clear()
-        elif key == "ctrl q":
-            self.queue_panel.add_songs_to_queue(self.search_panel.search_results.songs)
         elif self.focus != self.search_input:
             if key == ">":
                 self.seek(10)
@@ -301,11 +286,63 @@ class App(urwid.Pile):
             elif key in "+=":
                 self.volume_up()
             elif key in ("/", "ctrl f"):
+                if self.vim:
+                    self.vim_insert = True
                 self.set_focus(self.search_input)
-            else:
-                return self.focus.keypress(size, key)
-        else:
+
+        if self.vim and key == "esc":
+            self.vim_insert = False
+
+        if self.vim and not vim_insert_cache:
+            if key == "p":
+                self.toggle_play()
+            elif key == "k":
+                self.stop()
+            elif key == "n":
+                self.queue_panel.play_next()
+            elif key == "r":
+                hist_songs = [item for item in self.history if isinstance(item, Song)]
+                hist_yt = [item for item in self.history if isinstance(item, YTVideo)]
+                self.search_panel.view_previous_songs(hist_songs, hist_yt)
+            elif key == "s":
+                self.queue_panel.shuffle()
+            elif key == "shift t":
+                self.rate_current_song(5)
+            elif key == "t":
+                self.rate_current_song(1)
+            elif key == "w":
+                self.queue_panel.clear()
+            elif key == "q":
+                self.queue_panel.add_songs_to_queue(self.search_panel.search_results.songs)
+            elif key == "i":
+                self.vim_insert = True
+        elif not self.vim:
+            if key == "ctrl p":
+                self.toggle_play()
+            elif key == "ctrl k":
+                self.stop()
+            elif key == "ctrl n":
+                self.queue_panel.play_next()
+            elif key == "ctrl r":
+                hist_songs = [item for item in self.history if isinstance(item, Song)]
+                hist_yt = [item for item in self.history if isinstance(item, YTVideo)]
+                self.search_panel.view_previous_songs(hist_songs, hist_yt)
+            elif key == "ctrl s":
+                self.queue_panel.shuffle()
+            elif key == "ctrl u":
+                self.rate_current_song(5)
+            elif key == "ctrl d":
+                self.rate_current_song(1)
+            elif key == "ctrl w":
+                self.queue_panel.clear()
+            elif key == "ctrl q":
+                self.queue_panel.add_songs_to_queue(self.search_panel.search_results.songs)
+
+        # Only pass through keys dedicated to UI in vim mode
+        if not self.vim or vim_insert_cache or \
+            key in ("Q", "q", "e", "enter", "r", "R", "j", "k"):
             return self.focus.keypress(size, key)
+
 
     def mouse_event(self, size, event, button, col, row, focus=True):
         up, down = [("up", "down"), ("down", "up")][self.reverse_scrolling]
