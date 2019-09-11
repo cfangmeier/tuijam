@@ -318,7 +318,8 @@ class App(urwid.Pile):
                     if self.vim_mode:
                         self.vim_insert = True
                     self.set_focus(self.search_input)
-        if vim_insert_cache or not self.vim_mode:
+        if not self.vim_mode or self.focus != self.search_input or \
+                (self.focus == self.search_input and vim_insert_cache):
             return self.focus.keypress(size, key)
 
     def mouse_event(self, size, event, button, col, row, focus=True):
