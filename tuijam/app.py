@@ -125,13 +125,21 @@ class App(urwid.Pile):
         self.g_api.oauth_login(self.g_api.FROM_MAC_ADDRESS, CRED_FILE)
 
         if self.lastfm_sk is not None:
-            self.lastfm = LastFMAPI(self.lastfm_sk)
+            try:
+                self.lastfm = LastFMAPI(self.lastfm_sk)
+            except Exception:
+                print("Could not retrieve Last.fm keys.")
+                print("Scrobbling will not be available.")
             # TODO handle if sk is invalid
 
         from apiclient.discovery import build
-
-        developer_key, = lookup_keys("GOOGLE_DEVELOPER_KEY")
-        self.youtube = build("youtube", "v3", developerKey=developer_key)
+        try:
+            developer_key, = lookup_keys("GOOGLE_DEVELOPER_KEY")
+            self.youtube = build("youtube", "v3", developerKey=developer_key)
+        except Exception:
+            self.youtube = None
+            print("Could not retrieve YouTube key.")
+            print("YouTube will not be available.")
 
     def load_config(self):
         if not isfile(CONFIG_FILE):
@@ -388,6 +396,8 @@ class App(urwid.Pile):
         """
         Mostly stolen from: https://github.com/spnichol/youtube_tutorial/blob/master/youtube_videos.py
         """
+        if self.youtube is None:
+            return None, []
 
         search_response = (
             self.youtube.search()
