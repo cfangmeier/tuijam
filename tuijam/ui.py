@@ -1,4 +1,3 @@
-import logging
 import urwid
 
 from .music_objects import (
@@ -192,7 +191,7 @@ class SearchPanel(urwid.ListBox):
                 pass
 
     def update_search_results(
-        self, *categories, title="Search Results", isprevsong=False
+            self, *categories, title="Search Results", isprevsong=False
     ):
         if not self.viewing_previous_songs:  # only remember search history
             self.search_history.append((self.get_focus()[1], self.search_results))
@@ -300,9 +299,9 @@ class PlayBar(urwid.ProgressBar):
             song = self.app.current_song
             if self.app.lastfm and isinstance(song, Song):
                 if (
-                    not song.lastfm_scrobbled
-                    and total >= 30
-                    and (percent > 50 or progress > 4 * 60)
+                        not song.lastfm_scrobbled
+                        and total >= 30
+                        and (percent > 50 or progress > 4 * 60)
                 ):
                     self.app.lastfm.scrobble_song(song)
 

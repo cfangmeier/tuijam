@@ -4,12 +4,11 @@ from os.path import join, isfile
 from os import makedirs
 import sys
 
+import logging
 import urwid
 import gmusicapi
-import logging
 import yaml
 
-from .lastfm import LastFMAPI
 from .music_objects import (
     Song,
     Album,
@@ -24,6 +23,7 @@ from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar, controls
 from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE, CRED_FILE
 from tuijam.utility import lookup_keys
 
+from .lastfm import LastFMAPI
 
 class App(urwid.Pile):
 
@@ -237,7 +237,7 @@ class App(urwid.Pile):
             self.playbar.update()
 
         elif self.play_state == "pause" or (
-            self.play_state == "stop" and self.current_song is not None
+                self.play_state == "stop" and self.current_song is not None
         ):
             self.player.pause = False
             self.play_state = "play"
@@ -385,13 +385,13 @@ class App(urwid.Pile):
         )
 
     def youtube_search(
-        self,
-        q,
-        max_results=50,
-        order="relevance",
-        token=None,
-        location=None,
-        location_radius=None,
+            self,
+            q,
+            max_results=50,
+            order="relevance",
+            token=None,
+            location=None,
+            location_radius=None,
     ):
         """
         Mostly stolen from: https://github.com/spnichol/youtube_tutorial/blob/master/youtube_videos.py
