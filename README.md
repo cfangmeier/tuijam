@@ -105,7 +105,7 @@ video: true
 # Last.fm Support
 The player supports Last.fm scrobbling. To enable it, you need to run: 
 ```bash
-tuijam get_lastfm_token
+tuijam configure_last_fm
 ```
 
 # API Key Management
