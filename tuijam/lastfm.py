@@ -174,20 +174,6 @@ class LastFMAPI:
             with open(config_file, "r+") as f:
                 lastfm_sk = api.sk
                 config = yaml.safe_load(f.read())
-                if config.get("encrypted", False):
-
-                    from scrypt import decrypt, encrypt
-
-                    print("The config is encrypted, encrypting session key...")
-                    config_pw = getpass("Enter tuijam config pw: ")
-                    try:
-                        decrypt(config["email"], config_pw, maxtime=20)
-                        lastfm_sk = encrypt(lastfm_sk, config_pw, maxtime=0.5)
-                    except Exception as e:
-                        print(e)
-                        print("Could not decrypt config file.")
-                        exit(1)
-
                 config.update({"lastfm_sk": lastfm_sk})
                 f.seek(0)
                 yaml.safe_dump(config, f, default_flow_style=False)
