@@ -1,4 +1,3 @@
-import logging
 import urwid
 
 from .music_objects import (

@@ -4,12 +4,11 @@ from os.path import join, isfile
 from os import makedirs
 import sys
 
+import logging
 import urwid
 import gmusicapi
-import logging
 import yaml
 
-from .lastfm import LastFMAPI
 from .music_objects import (
     Song,
     Album,
@@ -23,6 +22,8 @@ from .music_objects import serialize, deserialize
 from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar, controls
 from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE, CRED_FILE
 from tuijam.utility import lookup_keys
+
+from .lastfm import LastFMAPI
 
 
 class App(urwid.Pile):

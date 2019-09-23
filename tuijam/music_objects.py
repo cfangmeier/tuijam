@@ -327,9 +327,9 @@ class RadioStation(MusicObject):
     def get_station_id(self, api):
         if self.id:
             return api.create_station(self.title, curated_station_id=self.id)
-        else:
-            seed = self.seeds[0]
-            return api.create_station(self.title, artist_id=seed["artistId"])
+
+        seed = self.seeds[0]
+        return api.create_station(self.title, artist_id=seed["artistId"])
 
     @staticmethod
     def header():
