@@ -53,6 +53,8 @@ class App(urwid.Pile):
         self.lastfm = None
         self.youtube = None
         self.mpris = None
+        self.vim_mode = None
+        self.vim_insert = False
 
         @self.player.event_callback("end_file")
         def end_file_callback(event):
@@ -150,6 +152,7 @@ class App(urwid.Pile):
                         persist_queue=True,
                         reverse_scrolling=False,
                         video=False,
+                        vim=False
                     ),
                     outfile,
                     default_flow_style=False,
@@ -169,6 +172,7 @@ class App(urwid.Pile):
             self.persist_queue = config.get("persist_queue", True)
             self.reverse_scrolling = config.get("reverse_scrolling", False)
             self.video = config.get("video", False)
+            self.vim_mode = config.get("vim-mode", False)
 
     def refresh(self, *args, **kwargs):
         if self.play_state == "play" and self.reached_end_of_track:
@@ -267,56 +271,63 @@ class App(urwid.Pile):
             self.mpris.emit_property_changed("Volume")
 
     def keypress(self, size, key):
-        if key in controls["g_focus_next"]:
-            current_focus = self.focus
-            if current_focus == self.search_panel_wrapped:
-                self.set_focus(self.queue_panel_wrapped)
-            elif current_focus == self.queue_panel_wrapped:
-                self.set_focus(self.search_input)
-            else:
-                self.set_focus(self.search_panel_wrapped)
-        elif key in controls["g_focus_prev"]:
-            current_focus = self.focus
-            if current_focus == self.search_panel_wrapped:
-                self.set_focus(self.search_input)
-            elif current_focus == self.queue_panel_wrapped:
-                self.set_focus(self.search_panel_wrapped)
-            else:
-                self.set_focus(self.queue_panel_wrapped)
-        elif key in controls["g_play_pause"]:
-            self.toggle_play()
-        elif key in controls["g_stop"]:
-            self.stop()
-        elif key in controls["g_play_next"]:
-            self.queue_panel.play_next()
-        elif key in controls["g_recent"]:
-            hist_songs = [item for item in self.history if isinstance(item, Song)]
-            hist_yt = [item for item in self.history if isinstance(item, YTVideo)]
-            self.search_panel.view_previous_songs(hist_songs, hist_yt)
-        elif key in controls["g_shuffle"]:
-            self.queue_panel.shuffle()
-        elif key in controls["g_rate_good"]:
-            self.rate_current_song(5)
-        elif key in controls["g_rate_bad"]:
-            self.rate_current_song(1)
-        elif key in controls["g_clear_queue"]:
-            self.queue_panel.clear()
-        elif key in controls["g_queue_all"]:
-            self.queue_panel.add_songs_to_queue(self.search_panel.search_results.songs)
-        elif self.focus != self.search_input:
-            if key in controls["seek_pos"]:
-                self.seek(10)
-            elif key in controls["seek_neg"]:
-                self.seek(-10)
-            elif key in controls["vol_down"]:
-                self.volume_down()
-            elif key in controls["vol_up"]:
-                self.volume_up()
-            elif key in controls["focus_search"]:
-                self.set_focus(self.search_input)
-            else:
-                return self.focus.keypress(size, key)
-        else:
+        vim_insert_cache = self.vim_insert
+        if self.vim_mode and key == "esc":
+            self.vim_insert = False
+        elif self.vim_mode and key == "i":
+            self.vim_insert = True
+        if not self.vim_mode or not vim_insert_cache:
+            if key in controls["g_focus_next"]:
+                current_focus = self.focus
+                if current_focus == self.search_panel_wrapped:
+                    self.set_focus(self.queue_panel_wrapped)
+                elif current_focus == self.queue_panel_wrapped:
+                    self.set_focus(self.search_input)
+                else:
+                    self.set_focus(self.search_panel_wrapped)
+            elif key in controls["g_focus_prev"]:
+                current_focus = self.focus
+                if current_focus == self.search_panel_wrapped:
+                    self.set_focus(self.search_input)
+                elif current_focus == self.queue_panel_wrapped:
+                    self.set_focus(self.search_panel_wrapped)
+                else:
+                    self.set_focus(self.queue_panel_wrapped)
+            elif key in controls["g_play_pause"]:
+                self.toggle_play()
+            elif key in controls["g_stop"]:
+                self.stop()
+            elif key in controls["g_play_next"]:
+                self.queue_panel.play_next()
+            elif key in controls["g_recent"]:
+                hist_songs = [item for item in self.history if isinstance(item, Song)]
+                hist_yt = [item for item in self.history if isinstance(item, YTVideo)]
+                self.search_panel.view_previous_songs(hist_songs, hist_yt)
+            elif key in controls["g_shuffle"]:
+                self.queue_panel.shuffle()
+            elif key in controls["g_rate_good"]:
+                self.rate_current_song(5)
+            elif key in controls["g_rate_bad"]:
+                self.rate_current_song(1)
+            elif key in controls["g_clear_queue"]:
+                self.queue_panel.clear()
+            elif key in controls["g_queue_all"]:
+                self.queue_panel.add_songs_to_queue(self.search_panel.search_results.songs)
+            elif self.focus != self.search_input:
+                if key in controls["seek_pos"]:
+                    self.seek(10)
+                elif key in controls["seek_neg"]:
+                    self.seek(-10)
+                elif key in controls["vol_down"]:
+                    self.volume_down()
+                elif key in controls["vol_up"]:
+                    self.volume_up()
+                elif key in controls["focus_search"]:
+                    if self.vim_mode:
+                        self.vim_insert = True
+                    self.set_focus(self.search_input)
+        if not self.vim_mode or self.focus != self.search_input or \
+                (self.focus == self.search_input and vim_insert_cache):
             return self.focus.keypress(size, key)
 
     def mouse_event(self, size, event, button, col, row, focus=True):
