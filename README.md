@@ -160,6 +160,7 @@ The default control keys are listed below with short descriptions. However, many
     - Type search query and press enter. Results are shown in search window.
     - Enter an empty query to view the suggested "Listen Now" stations and albums.
 
+There is also an experimental "vim mode" which can be enabled by adding `vim-mode: true` to your config file. With this mode enabled, pressing escape will mask keys from being typed into the search bar (press `i` to re-enable typing). This makes it more convenient to have single key commands for controlling playback (e.g. instead of `ctrl-n` for next song, simply `n`).
 
 
 # Thanks

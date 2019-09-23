@@ -138,9 +138,9 @@ class SearchPanel(urwid.ListBox):
         self.walker.append(urwid.Text(WELCOME, align="center"))
 
     def keypress(self, size, key):
-        if key in controls['queue'] or key in controls['queue_next']:
+        if key in controls["queue"] or key in controls["queue_next"]:
 
-            add_to_front = key in controls['queue_next']
+            add_to_front = key in controls["queue_next"]
             selected = self.selected_search_obj()
 
             if not selected:
@@ -297,15 +297,6 @@ class PlayBar(urwid.ProgressBar):
         if progress >= 0 and total > 0:
             percent = progress / total * 100
             self.set_completion(percent)
-            song = self.app.current_song
-            if self.app.lastfm and isinstance(song, Song):
-                if (
-                    not song.lastfm_scrobbled
-                    and total >= 30
-                    and (percent > 50 or progress > 4 * 60)
-                ):
-                    self.app.lastfm.scrobble_song(song)
-
         else:
             self.set_completion(0)
 
@@ -445,7 +436,7 @@ class QueuePanel(urwid.ListBox):
             self.to_bottom(focus_id)
             self.walker.set_focus(len(self.walker) - 1)
 
-        elif key in controls['remove']:
+        elif key in controls["remove"]:
             self.drop(focus_id)
 
         elif key in controls["down"]:

@@ -3,6 +3,7 @@
 build/
 dist/
 env/
+AUR/
 *__pycache__/
 
 *.egg-info/

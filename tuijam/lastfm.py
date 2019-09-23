@@ -107,11 +107,9 @@ class LastFMAPI:
             logging.error("LASTFM: updateNowPlaying: failed to update")
 
     def scrobble(self, artist, track, album, duration, ts_start):
-        # See: https://www.last.fm/api/scrobbling#when-is-a-scrobble-a-scrobble
-        # Minimum 30 seconds long + has been listened for min(50% of its length or 4 minutes)
         # See the scrobble method reference (https://www.last.fm/api/show/track.scrobble)
-        if self.sk is None or duration < 30:
-            return
+        if self.sk is None:
+            return False
 
         response = self.call_method(
             "track.scrobble",
@@ -126,16 +124,20 @@ class LastFMAPI:
         )
         logging.warning("LASTFM: scrobble: response = " + response.__str__())
 
-    def scrobble_song(self, song):
+    def scrobble_song(self, song, progress):
+        # See: https://www.last.fm/api/scrobbling#when-is-a-scrobble-a-scrobble
+        # Minimum 30 seconds long + has been listened for min(50% of its length or 4 minutes)
         try:
-            self.scrobble(
-                song.artist,
-                song.title,
-                song.album,
-                song.length[1] * 60 + song.length[0],
-                song.lastfm_ts_start,
-            )
-            song.lastfm_scrobbled = True
+            length = song.length[0] * 60 + song.length[1]
+            if (
+                not song.lastfm_scrobbled
+                and length >= 30
+                and (progress / length > 0.5 or progress > 4 * 60)
+            ):
+                self.scrobble(
+                    song.artist, song.title, song.album, length, song.lastfm_ts_start
+                )
+                song.lastfm_scrobbled = True
         except Exception as e:
             logging.exception("LASTFM: scrobble: " + e.__str__())
             logging.error("LASTFM: scrobble: failed to scrobble")

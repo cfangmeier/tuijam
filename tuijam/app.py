@@ -135,6 +135,7 @@ class App(urwid.Pile):
             # TODO handle if sk is invalid
 
         from apiclient.discovery import build
+
         try:
             developer_key, = lookup_keys("GOOGLE_DEVELOPER_KEY")
             self.youtube = build("youtube", "v3", developerKey=developer_key)
@@ -152,7 +153,7 @@ class App(urwid.Pile):
                         persist_queue=True,
                         reverse_scrolling=False,
                         video=False,
-                        vim=False
+                        vim=False,
                     ),
                     outfile,
                     default_flow_style=False,
@@ -161,7 +162,7 @@ class App(urwid.Pile):
         with open(CONFIG_FILE) as f:
             config = yaml.safe_load(f.read())
 
-            controls.update(config.get('controls', {}))
+            controls.update(config.get("controls", {}))
             for k, v in controls.items():
                 if type(v) is str:
                     controls[k] = [v]
@@ -184,6 +185,11 @@ class App(urwid.Pile):
 
         if self.play_state == "play":
             self.schedule_refresh()
+
+        song = self.current_song
+        if self.lastfm and isinstance(song, Song):
+            progress, _ = self.playbar.get_prog_tot()
+            self.lastfm.scrobble_song(song, progress)
 
     def schedule_refresh(self, dt=0.5):
         self.loop.set_alarm_in(dt, self.refresh)
@@ -276,24 +282,27 @@ class App(urwid.Pile):
             self.vim_insert = False
         elif self.vim_mode and key == "i":
             self.vim_insert = True
+            self.set_focus(self.search_input)
+        if key in controls["g_focus_next"]:
+            self.vim_insert = False
+            current_focus = self.focus
+            if current_focus == self.search_panel_wrapped:
+                self.set_focus(self.queue_panel_wrapped)
+            elif current_focus == self.queue_panel_wrapped:
+                self.set_focus(self.search_input)
+            else:
+                self.set_focus(self.search_panel_wrapped)
+        elif key in controls["g_focus_prev"]:
+            self.vim_insert = False
+            current_focus = self.focus
+            if current_focus == self.search_panel_wrapped:
+                self.set_focus(self.search_input)
+            elif current_focus == self.queue_panel_wrapped:
+                self.set_focus(self.search_panel_wrapped)
+            else:
+                self.set_focus(self.queue_panel_wrapped)
         if not self.vim_mode or not vim_insert_cache:
-            if key in controls["g_focus_next"]:
-                current_focus = self.focus
-                if current_focus == self.search_panel_wrapped:
-                    self.set_focus(self.queue_panel_wrapped)
-                elif current_focus == self.queue_panel_wrapped:
-                    self.set_focus(self.search_input)
-                else:
-                    self.set_focus(self.search_panel_wrapped)
-            elif key in controls["g_focus_prev"]:
-                current_focus = self.focus
-                if current_focus == self.search_panel_wrapped:
-                    self.set_focus(self.search_input)
-                elif current_focus == self.queue_panel_wrapped:
-                    self.set_focus(self.search_panel_wrapped)
-                else:
-                    self.set_focus(self.queue_panel_wrapped)
-            elif key in controls["g_play_pause"]:
+            if key in controls["g_play_pause"]:
                 self.toggle_play()
             elif key in controls["g_stop"]:
                 self.stop()
@@ -312,7 +321,9 @@ class App(urwid.Pile):
             elif key in controls["g_clear_queue"]:
                 self.queue_panel.clear()
             elif key in controls["g_queue_all"]:
-                self.queue_panel.add_songs_to_queue(self.search_panel.search_results.songs)
+                self.queue_panel.add_songs_to_queue(
+                    self.search_panel.search_results.songs
+                )
             elif self.focus != self.search_input:
                 if key in controls["seek_pos"]:
                     self.seek(10)
@@ -326,8 +337,12 @@ class App(urwid.Pile):
                     if self.vim_mode:
                         self.vim_insert = True
                     self.set_focus(self.search_input)
-        if not self.vim_mode or self.focus != self.search_input or \
-                (self.focus == self.search_input and vim_insert_cache):
+                    return  # return here to avoid a "/" in the search input
+        if (
+            not self.vim_mode
+            or self.focus != self.search_input
+            or (self.focus == self.search_input and vim_insert_cache)
+        ):
             return self.focus.keypress(size, key)
 
     def mouse_event(self, size, event, button, col, row, focus=True):
