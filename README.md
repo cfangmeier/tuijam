@@ -1,6 +1,6 @@
-<div style="text-align:center">
+<p align="center">
 <img src="https://raw.githubusercontent.com/cfangmeier/tuijam/master/tuijam.png"></img>
-</div>
+</p>
 
 ---
 
