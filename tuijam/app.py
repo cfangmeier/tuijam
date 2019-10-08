@@ -29,15 +29,13 @@ from .lastfm import LastFMAPI
 class App(urwid.Pile):
 
     palette = [
-        ("header", "", "", "", "#FFF,underline", ""),
-        ("header_bg", "", "", "", "#FFF", ""),
-        ("line", "", "", "", "#FFF", ""),
-        ("search normal", "", "", "", "#FFF", ""),
-        ("search select", "", "", "", "#FFF", "#D32"),
-        ("region_bg normal", "", "", "", "#888", ""),
-        ("region_bg select", "", "", "", "#FFF", ""),
-        ("progress", "", "", "", "#FFF", "#D32"),
-        ("progress_remaining", "", "", "", "#FFF", "#444"),
+        ("header", "white,underline", "black", "white,underline", "#FFF,underline", ""),
+        ("search normal", "white", "black", "white", "#FFF", ""),
+        ("search select", "white", "dark red", "white", "#FFF", "#D32"),
+        ("region_bg normal", "light gray", "black", "white", "#888", ""),
+        ("region_bg select", "white", "black", "white", "#FFF", ""),
+        ("progress", "white", "dark red", "white", "#FFF", "#D32"),
+        ("progress_remaining", "white", "dark gray", "white", "#FFF", "#444"),
     ]
 
     def __init__(self):
@@ -155,6 +153,7 @@ class App(urwid.Pile):
                         reverse_scrolling=False,
                         video=False,
                         vim=False,
+                        use_terminal_colors=False,
                     ),
                     outfile,
                     default_flow_style=False,
@@ -174,7 +173,8 @@ class App(urwid.Pile):
             self.persist_queue = config.get("persist_queue", True)
             self.reverse_scrolling = config.get("reverse_scrolling", False)
             self.video = config.get("video", False)
-            self.vim_mode = config.get("vim-mode", False)
+            self.vim_mode = config.get("vim_mode", False)
+            self.use_terminal_colors = config.get("use_terminal_colors", False)
 
     def refresh(self, *args, **kwargs):
         if self.play_state == "play" and self.reached_end_of_track:
@@ -627,7 +627,11 @@ def main():
 
     loop = urwid.MainLoop(app, palette=app.palette, event_loop=urwid.GLibEventLoop())
     app.loop = loop
-    loop.screen.set_terminal_properties(256)
+
+    if app.use_terminal_colors:
+        loop.screen.set_terminal_properties(16)
+    else:
+        loop.screen.set_terminal_properties(256)
 
     try:
         loop.run()

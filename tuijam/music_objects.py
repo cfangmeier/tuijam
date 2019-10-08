@@ -32,7 +32,7 @@ class MusicObject:
                 for weight, txt in zip_longest(weights, txts, fillvalue=1)
             ]
         )
-        return urwid.AttrMap(header, "header_bg")
+        return header
 
 
 class Song(MusicObject):
