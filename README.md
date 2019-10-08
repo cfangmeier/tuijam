@@ -1,5 +1,8 @@
-# TUIJam
-A fancy TUI client for Google Play Music.
+<p align="center">
+<img src="https://raw.githubusercontent.com/cfangmeier/tuijam/master/tuijam.png"></img>
+</p>
+
+---
 
 TUIJam seeks to make a simple, attractive, terminal-based interface to
 listening to music for Google Play Music All-Access subscribers.
