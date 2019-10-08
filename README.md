@@ -43,6 +43,7 @@ Local configuration is stored in `$HOME/.config/tuijam/config.yaml`.
 
   - `persist_queue`: (Default: `True`) Saves the current queue and reloads it when the app resumes
   - `reverse_scrolling`: (Default: `False`) Switches the direction of mouse scrolling
+  - `use_terminal_colors`: (Default: False) Use terminal colors instead of hard-coded ones
 
 Control keys and their defaults are listed below. Any of these can be added to the configuration file to override the default values.
 
@@ -163,7 +164,7 @@ The default control keys are listed below with short descriptions. However, many
     - Type search query and press enter. Results are shown in search window.
     - Enter an empty query to view the suggested "Listen Now" stations and albums.
 
-There is also an experimental "vim mode" which can be enabled by adding `vim-mode: true` to your config file. With this mode enabled, pressing escape will mask keys from being typed into the search bar (press `i` to re-enable typing). This makes it more convenient to have single key commands for controlling playback (e.g. instead of `ctrl-n` for next song, simply `n`).
+There is also an experimental "vim mode" which can be enabled by adding `vim_mode: true` to your config file. With this mode enabled, pressing escape will mask keys from being typed into the search bar (press `i` to re-enable typing). This makes it more convenient to have single key commands for controlling playback (e.g. instead of `ctrl-n` for next song, simply `n`).
 
 
 # Thanks
