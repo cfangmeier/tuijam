@@ -31,6 +31,16 @@ RATE_UI = {
     5: "▲",  # Thumbs up
 }
 
+palette = {
+    "header": ["white,underline", "default"],
+    "search-normal": ["white", "default"],
+    "search-select": ["white", "dark red"],
+    "region_bg-normal": ["light gray", "default"],
+    "region_bg-select": ["white", "default"],
+    "progress": ["white", "dark red"],
+    "progress_remaining": ["white", "dark gray"],
+}
+
 controls = dict(
     # search panel
     queue="q",

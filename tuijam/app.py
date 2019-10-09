@@ -19,7 +19,7 @@ from .music_objects import (
     YTVideo,
 )
 from .music_objects import serialize, deserialize
-from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar, controls
+from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar, controls, palette
 from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE, CRED_FILE
 from tuijam.utility import lookup_keys
 
@@ -27,17 +27,6 @@ from .lastfm import LastFMAPI
 
 
 class App(urwid.Pile):
-
-    palette = [
-        ("header", "white,underline", "black", "white,underline", "#FFF,underline", ""),
-        ("search normal", "white", "black", "white", "#FFF", ""),
-        ("search select", "white", "dark red", "white", "#FFF", "#D32"),
-        ("region_bg normal", "light gray", "black", "white", "#888", ""),
-        ("region_bg select", "white", "black", "white", "#FFF", ""),
-        ("progress", "white", "dark red", "white", "#FFF", "#D32"),
-        ("progress_remaining", "white", "dark gray", "white", "#FFF", "#444"),
-    ]
-
     def __init__(self):
         import mpv
 
@@ -154,6 +143,7 @@ class App(urwid.Pile):
                         video=False,
                         vim=False,
                         use_terminal_colors=False,
+                        palette=palette,
                     ),
                     outfile,
                     default_flow_style=False,
@@ -166,6 +156,8 @@ class App(urwid.Pile):
             for k, v in controls.items():
                 if type(v) is str:
                     controls[k] = [v]
+
+            palette.update(config.get("palette", {}))
 
             self.lastfm_sk = config.get("lastfm_sk", None)
 
@@ -625,13 +617,12 @@ def main():
 
     signal.signal(signal.SIGINT, app.cleanup)
 
-    loop = urwid.MainLoop(app, palette=app.palette, event_loop=urwid.GLibEventLoop())
+    loop = urwid.MainLoop(app, event_loop=urwid.GLibEventLoop())
+    loop.screen.set_terminal_properties(256)
+    loop.screen.register_palette(
+        [(k.replace("-", " "), "", "", "", fg, bg) for k, (fg, bg) in palette.items()]
+    )
     app.loop = loop
-
-    if app.use_terminal_colors:
-        loop.screen.set_terminal_properties(16)
-    else:
-        loop.screen.set_terminal_properties(256)
 
     try:
         loop.run()
