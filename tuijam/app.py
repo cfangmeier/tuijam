@@ -376,10 +376,13 @@ class App(urwid.Pile):
         elif isinstance(obj, Artist):
             artist_info = self.g_api.get_artist_info(obj.id)
 
-            songs = [Song.from_dict(track) for track in artist_info["topTracks"]]
+            songs = [
+                Song.from_dict(track) for track in artist_info.get("topTracks", [])
+            ]
             albums = [Album.from_dict(album) for album in artist_info.get("albums", [])]
             artists = [
-                Artist.from_dict(artist) for artist in artist_info["related_artists"]
+                Artist.from_dict(artist)
+                for artist in artist_info.get("related_artists", [])
             ]
             artists.insert(0, obj)
 
