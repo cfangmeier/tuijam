@@ -9,3 +9,5 @@ AUR/
 *.egg-info/
 *.log
 tags
+
+*.mo
