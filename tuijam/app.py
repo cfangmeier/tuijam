@@ -3,6 +3,7 @@
 from os.path import join, isfile
 from os import makedirs
 import sys
+import locale
 
 import logging
 import urwid
@@ -112,7 +113,8 @@ class App(urwid.Pile):
             except FlowExchangeError:
                 raise RuntimeError(_("Oauth authentication Failed."))
 
-        self.g_api.oauth_login(self.g_api.FROM_MAC_ADDRESS, CRED_FILE)
+        self.g_api.oauth_login(self.g_api.FROM_MAC_ADDRESS, CRED_FILE,
+                               locale=locale.getdefaultlocale()[0])
 
         if self.lastfm_sk is not None:
             try:
