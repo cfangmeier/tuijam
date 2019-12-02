@@ -7,3 +7,4 @@ python-mpv>=0.3.6
 PyGObject>=3.28.3
 pydbus>=0.6.0
 google-api-python-client>=1.7.4
+Babel>=2.6.0
