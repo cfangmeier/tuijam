@@ -226,11 +226,11 @@ def setup_mpris(app):
         def OpenUri(self, uri):
             pass
 
-    mpris = MPRIS(app)
-    bus = SessionBus()
     try:
+        mpris = MPRIS(app)
+        bus = SessionBus()
         bus.publish("org.mpris.MediaPlayer2.tuijam", ("/org/mpris/MediaPlayer2", mpris))
         return mpris
-    except RuntimeError as e:
+    except Exception as e:
         logging.exception(e)
         return None
