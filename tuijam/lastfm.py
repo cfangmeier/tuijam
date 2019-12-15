@@ -5,7 +5,7 @@ from datetime import datetime
 import requests
 import yaml
 
-from tuijam import __version__, CONFIG_DIR, _
+from tuijam import __version__, CONFIG_DIR
 from tuijam.utility import lookup_keys
 
 

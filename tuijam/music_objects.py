@@ -4,7 +4,6 @@ import json
 
 import urwid
 
-from tuijam import _
 from .utility import sec_to_min_sec
 
 

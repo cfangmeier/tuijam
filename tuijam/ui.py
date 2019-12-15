@@ -1,6 +1,5 @@
 import urwid
 
-from tuijam import _
 from .music_objects import (
     Song,
     Artist,
@@ -79,6 +78,7 @@ controls = dict(
     g_queue_all="ctrl q",
 )
 
+_ = lambda a: a
 
 class SearchInput(urwid.Edit):
     def __init__(self, app):
@@ -202,8 +202,10 @@ class SearchPanel(urwid.ListBox):
                 pass
 
     def update_search_results(
-        self, *categories, title=_("search_results_title"), isprevsong=False
+        self, *categories, title=None, isprevsong=False
     ):
+        if title is None:
+            title = _("search_results_title")
         if not self.viewing_previous_songs:  # only remember search history
             self.search_history.append((self.get_focus()[1], self.search_results))
 
@@ -467,3 +469,5 @@ class QueuePanel(urwid.ListBox):
 
         else:
             return super().keypress(size, key)
+
+del _

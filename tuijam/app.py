@@ -21,7 +21,7 @@ from .music_objects import (
 )
 from .music_objects import serialize, deserialize
 from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar, controls, palette
-from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE, CRED_FILE, LOCALE_DIR, _
+from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE, CRED_FILE, LOCALE_DIR
 from tuijam.utility import lookup_keys
 
 from .lastfm import LastFMAPI
@@ -573,18 +573,15 @@ class App(urwid.Pile):
 def load_locale():
     import gettext
 
-    # Delete stub translation
-    del _
-
     # Install English translation (default)
     try:
-        fallback_lang = gettext.translation('tuijam', languages=['en'])
+        fallback_lang = gettext.translation('tuijam', languages=['en_US'])
     except OSError:
         try:
             # Try to find it in ~/.config/tuijam/lang
             # If installed without root
             fallback_lang = gettext.translation(
-                'tuijam', localedir=LOCALE_DIR, languages=['en']
+                'tuijam', localedir=LOCALE_DIR, languages=['en_US']
             )
         except OSError as e:
             print("Failed to load English locale, which is default.")
@@ -600,7 +597,6 @@ def load_locale():
     except OSError as e:
         pass
     else:
-        del _
         locale.install()
 
     # Then load user translation
@@ -613,7 +609,6 @@ def load_locale():
     except OSError as e:
         pass
     else:
-        del _
         locale_user.install()
 
 
