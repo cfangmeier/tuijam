@@ -70,10 +70,11 @@ class Song(MusicObject):
         return f"<Song title:{self.title}, album:{self.album}, artist:{self.artist}>"
 
     def __str__(self):
-        return "{} {}{}".format(self.title, _("by "), self.artist)
+        return "{} {}{}".format(self.title, _("by") + ' ', self.artist)
 
     def fmt_str(self):
-        return [("np_song", f"{self.title} "), _("by "), ("np_artist", f"{self.artist}")]
+        return [("np_song", f"{self.title} "), _("by") + ' ',
+                ("np_artist", f"{self.artist}")]
 
     def ui(self):
         from .ui import RATE_UI
@@ -90,7 +91,9 @@ class Song(MusicObject):
     @classmethod
     def header(cls):
         return MusicObject.header_ui(
-            _("Title"), _("Album"), _("Artist"), _("Length"), _("Rating"),
+            _("song_header_title"), _("song_header_album"),
+            _("song_header_artist"), _("song_header_length"),
+            _("song_header_rating"),
             weights=cls.ui_weights
         )
 
@@ -155,17 +158,21 @@ class YTVideo(MusicObject):
         return f"<YTVideo title:{self.title}, channel:{self.artist}>" # TODO check if it is a bug
 
     def __str__(self):
-        return "{} {}{}".format(self.title, _("by "), self.channel)
+        return "{} {}{}".format(self.title, _("by") + ' ', self.channel)
 
     def fmt_str(self):
-        return [("np_song", f"{self.title} "), _("by "), ("np_artist", f"{self.channel}")]
+        return [("np_song", f"{self.title} "), _("by") + ' ',
+                ("np_artist", f"{self.channel}")]
 
     def ui(self):
         return self.to_ui(self.title, self.channel, weights=self.ui_weights)
 
     @classmethod
     def header(cls):
-        return MusicObject.header_ui(_("Youtube"), _("Channel"), weights=cls.ui_weights)
+        return MusicObject.header_ui(
+            _("yt_header_name"), _("yt_header_channel"),
+            weights=cls.ui_weights
+        )
 
     @staticmethod
     def from_dict(d):
@@ -199,7 +206,11 @@ class Album(MusicObject):
 
     @staticmethod
     def header():
-        return MusicObject.header_ui(_("Album"), _("Artist"), _("Year"))
+        return MusicObject.header_ui(
+            _("album_header_name"),
+            _("album_header_artist"),
+            _("album_header_year")
+        )
 
     @staticmethod
     def from_dict(d):
@@ -245,7 +256,7 @@ class Artist(MusicObject):
 
     @staticmethod
     def header():
-        return MusicObject.header_ui(_("Artist"))
+        return MusicObject.header_ui(_("artist_header_name"))
 
     @staticmethod
     def from_dict(d):
@@ -277,7 +288,10 @@ class Situation(MusicObject):
 
     @staticmethod
     def header():
-        return MusicObject.header_ui(_("Situation"), _("Description"))
+        return MusicObject.header_ui(
+            _("situation_header_name"),
+            _("situation_header_desc")
+        )
 
     @staticmethod
     def from_dict(d):
@@ -335,7 +349,7 @@ class RadioStation(MusicObject):
 
     @staticmethod
     def header():
-        return MusicObject.header_ui(_("Station Name"))
+        return MusicObject.header_ui(_("radiostation_header_name"))
 
     @staticmethod
     def from_dict(d):
@@ -366,7 +380,11 @@ class Playlist(MusicObject):
 
     @classmethod
     def header(cls):
-        return MusicObject.header_ui(_("Playlist Name"), _("# Songs"), weights=cls.ui_weights)
+        return MusicObject.header_ui(
+            _("playlist_header_name"),
+            _("playlist_header_song_cnt"),
+            weights=cls.ui_weights
+        )
 
     @staticmethod
     def from_dict(d):

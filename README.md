@@ -187,7 +187,10 @@ You can grab .pot file from the repo (`lang` folder) and work with it or:
 1. Clone the repo
 2. Run `python setup.py extract_messages` to generate .pot file
 3. Run `python setup.py init_catalog -l <LOCALE_CODE>` to generate a new locale.
-4. Compile your locale with `python setup.py compile_catalog`.
+4. Update the locale with `python setup.py update_catalog -l <LOCALE_CODE> -o <LOCALE_PATH>`
+5. Compile your locale with `python setup.py compile_catalog`.
+
+`<LOCALE_CODE>` is [ICU locale ID](https://www.localeplanet.com/icu/)
 
 User locales are supported. Copy generated .mo files to $HOME/.config/tuijam/lang/<LOCALE_CODE>/LC_MESSAGES folder. 
 Notice that .po files are not supported for now.

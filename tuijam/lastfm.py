@@ -149,11 +149,11 @@ class LastFMAPI:
 
         config_file = join(CONFIG_DIR, "config.yaml")
         if not isfile(config_file):
-            print(_("It seems that you haven't run tuijam yet."))
-            print(_("Please run it first, then authorize to Last.fm."))
+            print(_("lastfm_err_first_run0"))
+            print(_("lastfm_err_first_run1"))
             return
 
-        print(_("generating Last.fm authentication token"))
+        print(_("lastfm_generating_token"))
         api = LastFMAPI()
         token = api.get_token()
         auth_url = api.get_auth_url(token)
@@ -163,15 +163,12 @@ class LastFMAPI:
         webbrowser.open_new_tab(auth_url)
 
         print()
-        print(
-            _("Please open this link in your browser and authorize the app in case the window ").join(
-            _("hasn't been opened automatically:"))
-        )
+        print(_("lastfm_open_auth_link_prompt"))
         print(auth_url)
         print()
-        input(_("After that, press Enter to get your session key..."))
+        input(_("lastfm_press_enter_to_get_sk"))
         if not api.auth_by_token(token):
-            print(_("Failed to get a session key. Have you authorized?"))
+            print(_("lastfm_auth_fail"))
         else:
             with open(config_file, "r+") as f:
                 lastfm_sk = api.sk
@@ -181,4 +178,4 @@ class LastFMAPI:
                 yaml.safe_dump(config, f, default_flow_style=False)
                 f.truncate()
                 f.close()
-            print(_("Successfully authenticated."))
+            print(_("lastfm_auth_success"))
