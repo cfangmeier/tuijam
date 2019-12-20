@@ -96,6 +96,10 @@ class App(urwid.Pile):
         self.current_song = None
         self.history = []
 
+    def pop_from_history(self):
+        if len(self.history) > 0:
+            return self.history.pop(0)
+
     def login(self):
         self.g_api = gmusicapi.Mobileclient(debug_logging=False)
         self.load_config()
@@ -203,8 +207,10 @@ class App(urwid.Pile):
         self.player.pause = False
         self.play_state = "play"
         self.playbar.update()
+    
         self.history.insert(0, song)
         self.history = self.history[:100]
+    
         self.schedule_refresh()
 
         if self.mpris:
@@ -301,6 +307,8 @@ class App(urwid.Pile):
                 self.stop()
             elif key in controls["g_play_next"]:
                 self.queue_panel.play_next()
+            elif key in controls["g_play_previous"]:
+            	self.queue_panel.play_previous()
             elif key in controls["g_recent"]:
                 hist_songs = [item for item in self.history if isinstance(item, Song)]
                 hist_yt = [item for item in self.history if isinstance(item, YTVideo)]
@@ -557,6 +565,9 @@ class App(urwid.Pile):
             self.queue_panel.clear()
 
     def save_history(self):
+        if self.current_song:
+            self.pop_from_history()
+    
         with open(HISTORY_FILE, "w") as f:
             f.write(serialize(self.history))
 

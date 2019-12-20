@@ -70,6 +70,7 @@ controls = dict(
     g_play_pause="ctrl p",
     g_stop="ctrl k",
     g_play_next="ctrl n",
+    g_play_previous="ctrl b",
     g_recent="ctrl r",
     g_shuffle="ctrl s",
     g_rate_good="ctrl u",
@@ -406,6 +407,7 @@ class QueuePanel(urwid.ListBox):
             next_song = self.queue.pop(0)
 
             if self.app.play(next_song):
+                
                 next_song.lastfm_scrobbled = False
                 if self.app.lastfm and isinstance(next_song, Song):
                     self.app.lastfm.update_now_playing_song(next_song)
@@ -413,6 +415,19 @@ class QueuePanel(urwid.ListBox):
         else:
             self.app.current_song = None
             self.app.stop()
+
+    def play_previous(self):
+
+        self.add_song_to_queue(self.app.current_song, to_front=True)
+
+        if self.app.current_song:
+            self.app.pop_from_history()
+
+        s = self.app.pop_from_history()
+        if s:
+            self.add_song_to_queue(s, to_front=True)
+
+        self.play_next()
 
     def selected_queue_obj(self):
 
