@@ -63,7 +63,7 @@ TUIJam supports a subset of the [MPRIS](https://specifications.freedesktop.org/m
   - Get current song metadata (Title/Album/Artist)
   - Get player status (Playing/Paused/Stopped)
   - Play/Pause current song
-  - Next Song
+  - Next/Previous Song
   - Stop
 
 If this causes problems for you, please feel free to create an issue, but this feature can also be disabled by placing the following line in your config file:
@@ -109,14 +109,15 @@ The default control keys are listed below with short descriptions. However, many
   - `ctrl-p` toggle play/pause
   - `ctrl-k` stop
   - `ctrl-q` add all songs in search result to queue
-  - `ctrl-n` move to next song
+  - `ctrl-n`/`right` move to next song
+  - `ctrl-b`/`left` move to previous song
   - `ctrl-r` view recently played songs
   - `ctrl-w` Clear the current queue
   - `ctrl-s` shuffle queued songs (Note: If this hangs, try running `stty -ixon` in your terminal and restarting `tuijam`)
   - `ctrl-u` Thumbs up the currently playing song
   - `ctrl-d` Thumbs down the currently playing song
-  - `>` seek forward 10 seconds
-  - `<` seek backwards 10 seconds
+  - `>`/`shift-right` seek forward 10 seconds
+  - `<`/`shift-left` seek backwards 10 seconds
   - `+` volume up
   - `-` volume down
   - `tab`/`shift-tab` cycle focus through search/queue/input windows
@@ -157,8 +158,8 @@ controls:
     down: "j",
     up: "k",
     expand: ["e", "enter"],
-    seek_pos: ">",
-    seek_neg: "<",
+    seek_pos: [">", "shift right"],
+    seek_neg: ["<", "shift left"],
     vol_up: ["+", "="],
     vol_down: ["-", "_"],
     focus_search: ["ctrl f", "/"],
@@ -168,7 +169,8 @@ controls:
     g_focus_prev: "shift tab",
     g_play_pause: "ctrl p",
     g_stop: "ctrl k",
-    g_play_next: "ctrl n",
+    g_play_next: ["ctrl n", "right"],
+    g_play_previous: ["ctrl b", "left"],
     g_recent: "ctrl r",
     g_shuffle: "ctrl s",
     g_rate_good: "ctrl u",
