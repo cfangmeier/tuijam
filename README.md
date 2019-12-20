@@ -1,10 +1,13 @@
-# TUIJam
-A fancy TUI client for Google Play Music.
+<p align="center">
+<img src="https://raw.githubusercontent.com/cfangmeier/tuijam/master/tuijam.png"></img>
+</p>
+
+---
 
 TUIJam seeks to make a simple, attractive, terminal-based interface to
 listening to music for Google Play Music All-Access subscribers.
 
-[![asciicast](https://asciinema.org/a/155875.png)](https://asciinema.org/a/155875)
+[![asciicast](https://asciinema.org/a/bhsWdt4M2CQwfWSjWNXBiTcqs.svg)](https://asciinema.org/a/bhsWdt4M2CQwfWSjWNXBiTcqs)
 
 # Dependencies
 * [Python >= 3.6](https://www.python.org/downloads)
@@ -30,22 +33,29 @@ yay -S tuijam  # mainline
 yay -S tuijam-git # dev build
 ```
 
+# First Time Setup
+
+The first time TUIJam runs, it will perform an OAuth handshake with Google. Tokens are then stored locally and subsequent logins should be automatic.
+
 # Configuration
-When you first launch TUIJam, it checks for a config file in `$HOME/.config/tuijam/config.yaml` with the following content:
-```yaml
-email: you@your-email.com
-password: your-password
-device_id: yourdeviceid
-```
-If this file doesn't exist, TUIJam will guide you through a first-time setup where you will need to supply your google music email, password, and (optionally) a separate password to encrypt your google credentials locally.
 
-Note that if you have 2-factor setup on your Google account, you need to make
-an app-password for TUIJam.
-
-## Additional Configuration
+Local configuration is stored in `$HOME/.config/tuijam/config.yaml`.
 
   - `persist_queue`: (Default: `True`) Saves the current queue and reloads it when the app resumes
   - `reverse_scrolling`: (Default: `False`) Switches the direction of mouse scrolling
+
+You can customize the visual theme of TUIJam by specifying the foreground/background colors of many of the UI elements in your configuration file. You can specify named colors to use your [terminal colorscheme](http://urwid.org/manual/displayattributes.html#standard-foreground-colors) or use `#RGB` for custom colors. The default values are listed below.
+
+```yaml
+palette:
+  header: ["white,underline", "default"]
+  search-normal: ["white", "default"]
+  search-select: ["white", "dark red"]
+  region_bg-normal: ["light gray", "default"]
+  region_bg-select: ["white", "default"]
+  progress: ["white", "dark red"]
+  progress_remaining: ["white", "dark gray"]
+```
 
 # MPRIS Support
 TUIJam supports a subset of the [MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/) spec to allow for external control via clients such as [playerctl](https://github.com/acrisci/playerctl). Currently, the following behavior is supported:
@@ -61,6 +71,7 @@ If this causes problems for you, please feel free to create an issue, but this f
 ```yaml
 mpris_enabled: false
 ```
+
 # Youtube
 From version 0.3.0, Youtube videos are included in search results. By default, no video is shown during playback, but this can be changed by adding the following line to the config file:
 
@@ -71,11 +82,29 @@ video: true
 # Last.fm Support
 The player supports Last.fm scrobbling. To enable it, you need to run: 
 ```bash
-tuijam get_lastfm_token
+tuijam configure_last_fm
 ```
 
+# API Key Management
+
+Youtube and Last.fm integration uses api keys that are supplied by me. TUIJam queries them at runtime from a server that I maintain. If the server goes down, of if you would just prefer not to rely on it, you can specify your own keys in the config file. Keys are only queried if they are not present in the config file.
+
+```yaml
+GOOGLE_DEVELOPER_KEY: "yourdeveloperkeyhere"
+LASTFM_API_KEY: "yourapikeyhere"
+LASTFM_API_SECRET: "yoursecrethere"
+```
+
+You can also run your own server using or adapting `key_server_example.py` and setting your config file to point to your server.
+
+```yaml
+key_server: "https://my-tuijam-key-server.io"
+```
 
 # Controls
+
+The default control keys are listed below with short descriptions. However, many of these can be overridden by specifying alternative keys in the configuration file.
+
   - `ctrl-c` quit
   - `ctrl-p` toggle play/pause
   - `ctrl-k` stop
@@ -108,6 +137,47 @@ tuijam get_lastfm_token
     - Type search query and press enter. Results are shown in search window.
     - Enter an empty query to view the suggested "Listen Now" stations and albums.
 
+To customize these keys, add as many of the following entries into your config file as you want. A list indicates that multiple keys are assigned to that action.
+
+```yaml
+controls:
+    queue: "q"
+    queue_next: "Q"
+    expand: ["e", "enter"]
+    back: "backspace",
+    radio: "r",
+    # queue panel
+    swap_up: ["u", "shift up"],
+    swap_down: ["d", "shift down"],
+    to_top: ["U", "ctrl up"],
+    to_bottom: ["D", "ctrl down"],
+    remove: ["delete", "x"],
+    play_pause: " ",
+    # search and queue panel
+    down: "j",
+    up: "k",
+    expand: ["e", "enter"],
+    seek_pos: ">",
+    seek_neg: "<",
+    vol_up: ["+", "="],
+    vol_down: ["-", "_"],
+    focus_search: ["ctrl f", "/"],
+    # global inputs
+    # Avoid single letter/number/symb keys to work with search input focused, unless vim-mode is active.
+    g_focus_next: "tab",
+    g_focus_prev: "shift tab",
+    g_play_pause: "ctrl p",
+    g_stop: "ctrl k",
+    g_play_next: "ctrl n",
+    g_recent: "ctrl r",
+    g_shuffle: "ctrl s",
+    g_rate_good: "ctrl u",
+    g_rate_bad: "ctrl d",
+    g_clear_queue: "ctrl w",
+    g_queue_all: "ctrl q",
+```
+
+There is an experimental "vim mode" which can be enabled by adding `vim_mode: true` to your config file. With this mode enabled, pressing escape will mask keys from being typed into the search bar (press `i` to re-enable typing). This makes it more convenient to have single key commands for controlling playback (e.g. instead of `ctrl-n` for next song, simply `n`).
 
 # Thanks
 TUIJam was heavily inspired by the
