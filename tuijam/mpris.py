@@ -178,7 +178,7 @@ def setup_mpris(app):
 
         @property
         def CanGoPrevious(self):
-            return False
+            return len(self.app.history) > (1 if self.app.current_song else 0)
 
         @property
         def CanPlay(self):
@@ -202,7 +202,7 @@ def setup_mpris(app):
             self.app.queue_panel.play_next()
 
         def Previous(self):
-            pass
+            self.app.queue_panel.play_previous()
 
         def Pause(self):
             if self.app.play_state == "play":
