@@ -5,341 +5,217 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: TUIJam 0.6.2\n"
+"Project-Id-Version: TUIJam VERSION\n"
 "Report-Msgid-Bugs-To: sh1ftr@protonmail.ch\n"
-"POT-Creation-Date: 2019-12-15 18:33+1000\n"
-"PO-Revision-Date: 2019-12-15 19:18+1000\n"
+"POT-Creation-Date: 2019-12-02 13:42+1000\n"
+"PO-Revision-Date: 2019-12-02 13:49+1000\n"
 "Last-Translator: Yury Kurlykov <sh1ftr@protonmail.ch>\n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <sh1ftr@protonmail.ch>\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
-"X-Generator: Poedit 2.2.4\n"
 
-#: tuijam/app.py:59 tuijam/ui.py:197 tuijam/ui.py:205
-msgid "search_results_title"
+#: tuijam/app.py:58 tuijam/ui.py:196 tuijam/ui.py:204
+msgid "Search Results"
 msgstr "Результаты Поиска"
 
-#: tuijam/app.py:74
-msgid "queue_title"
+#: tuijam/app.py:73
+msgid "Queue"
 msgstr "Очередь"
 
-#: tuijam/app.py:107
-msgid "no_google_creds_found0"
+#: tuijam/app.py:106
+msgid "No local credentials file found."
 msgstr "Файл локальных учётных данных не найден."
 
-#: tuijam/app.py:108
-msgid "no_google_creds_found1"
+#: tuijam/app.py:107
+msgid "TUIJam will now open a browser window so you can provide"
 msgstr "TUIJam сейчас откроет окно браузера, чтобы Вы могли дать"
 
-#: tuijam/app.py:109
-msgid "no_google_creds_found2"
+#: tuijam/app.py:108
+msgid "permission for TUIJam to access your Google Play Music account."
 msgstr "разрешение TUIJam на доступ к Вашему аккаунту Google Play Music."
 
-#: tuijam/app.py:110
-msgid "press_enter_to_continue"
+#: tuijam/app.py:109
+msgid "Press enter to continue."
 msgstr "Нажмите Enter, чтобы продолжить."
 
-#: tuijam/app.py:114
-msgid "oauth_failed"
+#: tuijam/app.py:113
+msgid "Oauth authentication Failed."
 msgstr "Авторизация OAuth не удалась."
 
-#: tuijam/app.py:123
-msgid "lastfm_key_retrieval_failure"
+#: tuijam/app.py:121
+msgid "Could not retrieve Last.fm keys."
 msgstr "Не могу получить ключи Last.fm."
 
-#: tuijam/app.py:124
-msgid "scrobbling_not_available"
-msgstr "Скробблинг будет недоступен."
+#: tuijam/app.py:122
+msgid "Scrobbling will not be available."
+msgstr "Скроблинг будет недоступен."
 
-#: tuijam/app.py:134
-msgid "yt_key_retrieval_failure"
+#: tuijam/app.py:132
+msgid "Could not retrieve YouTube key."
 msgstr "Не могу получить ключ YouTube."
 
-#: tuijam/app.py:135
-msgid "yt_not_available"
+#: tuijam/app.py:133
+msgid "YouTube will not be available."
 msgstr "YouTube будет недоступен."
 
-#: tuijam/app.py:479
-msgid "playlist_liked_title"
+#: tuijam/app.py:477
+msgid "Liked"
 msgstr "Понравилось Вам"
 
-#: tuijam/app.py:540
-msgid "saving_queue"
-msgstr "Cохраняю очередь."
+#: tuijam/app.py:538
+msgid "saving queue"
+msgstr "сохраняю очередь"
 
-#: tuijam/app.py:558
-msgid "queue_restore_fail"
-msgstr "Не удалось восстановить очередь. :("
+#: tuijam/app.py:556
+msgid "failed to restore queue. :("
+msgstr "не удалось восстановить очередь. :("
 
-#: tuijam/app.py:571
-msgid "history_restore_fail"
-msgstr "Не удалось восстановить историю прослушиваний. :("
+#: tuijam/app.py:569
+msgid "failed to restore recently played. :("
+msgstr "не удалось восстановить историю прослушиваний. :("
 
-#: tuijam/app.py:619
-msgid "tuijam_app_desc"
+#: tuijam/app.py:576
+msgid "A fancy TUI client for Google Play Music."
 msgstr "Навороченный терминальный клиент для Google Play Music."
 
-#: tuijam/app.py:627
-msgid "starting_up"
-msgstr "Запускаюсь."
+#: tuijam/app.py:584
+msgid "starting up."
+msgstr "запускаюсь."
 
-#: tuijam/app.py:641
-msgid "logging_in"
-msgstr "Авторизуюсь."
+#: tuijam/app.py:598
+msgid "logging in."
+msgstr "авторизуюсь."
 
-#: tuijam/app.py:647
-msgid "enabling_ext_control"
-msgstr "Включаю внешний контроль."
+#: tuijam/app.py:604
+msgid "enabling external control."
+msgstr "включаю внешний контроль."
 
-#: tuijam/app.py:650
-msgid "fail"
+#: tuijam/app.py:607
+msgid "Failed."
 msgstr "Не удалось."
 
-#: tuijam/app.py:653
-msgid "restoring_queue"
-msgstr "Восстанавливаю очередь."
+#: tuijam/app.py:610
+msgid "restoring queue"
+msgstr "восстанавливаю очередь"
 
-#: tuijam/app.py:656
-msgid "restoring_history"
-msgstr "Восстанавливаю историю."
+#: tuijam/app.py:613
+msgid "restoring history"
+msgstr "восстанавливаю историю"
 
-#: tuijam/app.py:678
-msgid "exception_thrown"
-msgstr ""
-"Произошло что-то плохое! :( Смотрите лог ($HOME/.config/tuijam/log.txt), "
+#: tuijam/app.py:635
+msgid ""
+"Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) "
+"for more information."
+msgstr "Произошло что-то плохое! :( Смотрите лог ($HOME/.config/tuijam/log.txt), "
 "чтобы узнать больше."
 
 #: tuijam/lastfm.py:152
-msgid "lastfm_err_first_run0"
-msgstr "Похоже, что Вы ещё не запускали TUIJam."
+msgid "It seems that you haven't run tuijam yet."
+msgstr "Похоже, что Вы ещё не запускали tuijam."
 
 #: tuijam/lastfm.py:153
-msgid "lastfm_err_first_run1"
+msgid "Please run it first, then authorize to Last.fm."
 msgstr "Пожалуйста, запустите сначала его, затем авторизуйтесь в Last.fm."
 
 #: tuijam/lastfm.py:156
-msgid "lastfm_generating_token"
-msgstr "Генерирую токен аутентификации Last.fm."
+msgid "generating Last.fm authentication token"
+msgstr "генерирую токен аутентификации Last.fm"
 
-#: tuijam/lastfm.py:166
-msgid "lastfm_open_auth_link_prompt"
-msgstr ""
-"Пожалуйста, откройте эту ссылку в Вашем браузере и авторизуйте приложение, "
-"если окно не открылось автоматически:"
+#: tuijam/lastfm.py:167
+msgid ""
+"Please open this link in your browser and authorize the app in case the "
+"window "
+msgstr "Пожалуйста, откройте эту ссылку в Вашем браузере и авторизуйте приложение, "
+"если окно "
 
-#: tuijam/lastfm.py:169
-msgid "lastfm_press_enter_to_get_sk"
+#: tuijam/lastfm.py:168
+msgid "hasn't been opened automatically:"
+msgstr "не открылось автоматически:"
+
+#: tuijam/lastfm.py:172
+msgid "After that, press Enter to get your session key..."
 msgstr "После этого нажмите Enter, чтобы получить ключ сессии..."
 
-#: tuijam/lastfm.py:171
-msgid "lastfm_auth_fail"
+#: tuijam/lastfm.py:174
+msgid "Failed to get a session key. Have you authorized?"
 msgstr "Не удалось получить ключ сессии. Вы авторизовались?"
 
-#: tuijam/lastfm.py:181
-msgid "lastfm_auth_success"
+#: tuijam/lastfm.py:184
+msgid "Successfully authenticated."
 msgstr "Успешно авторизован."
 
-#: tuijam/music_objects.py:73 tuijam/music_objects.py:76
-#: tuijam/music_objects.py:161 tuijam/music_objects.py:164
-msgid "by"
-msgstr "от"
+#: tuijam/music_objects.py:72 tuijam/music_objects.py:75
+#: tuijam/music_objects.py:157 tuijam/music_objects.py:160
+msgid "by "
+msgstr "от "
 
-#: tuijam/music_objects.py:94
-msgid "song_header_title"
+#: tuijam/music_objects.py:92
+msgid "Title"
 msgstr "Название"
 
-#: tuijam/music_objects.py:94
-msgid "song_header_album"
+#: tuijam/music_objects.py:92 tuijam/music_objects.py:201
+msgid "Album"
 msgstr "Альбом"
 
-#: tuijam/music_objects.py:95
-msgid "song_header_artist"
+#: tuijam/music_objects.py:92 tuijam/music_objects.py:201
+#: tuijam/music_objects.py:247
+msgid "Artist"
 msgstr "Исполнитель"
 
-#: tuijam/music_objects.py:95
-msgid "song_header_length"
+#: tuijam/music_objects.py:92
+msgid "Length"
 msgstr "Длина"
 
-#: tuijam/music_objects.py:96
-msgid "song_header_rating"
+#: tuijam/music_objects.py:92
+msgid "Rating"
 msgstr "Оценка"
 
-#: tuijam/music_objects.py:173
-msgid "yt_header_name"
-msgstr "Видео"
+#: tuijam/music_objects.py:167
+msgid "Youtube"
+msgstr "YouTube"
 
-#: tuijam/music_objects.py:173
-msgid "yt_header_channel"
+#: tuijam/music_objects.py:167
+msgid "Channel"
 msgstr "Канал"
 
-#: tuijam/music_objects.py:210
-msgid "album_header_name"
-msgstr "Альбом"
-
-#: tuijam/music_objects.py:211
-msgid "album_header_artist"
-msgstr "Исполнитель"
-
-#: tuijam/music_objects.py:212
-msgid "album_header_year"
+#: tuijam/music_objects.py:201
+msgid "Year"
 msgstr "Год"
 
-#: tuijam/music_objects.py:259
-msgid "artist_header_name"
-msgstr "Исполнитель"
-
-#: tuijam/music_objects.py:292
-msgid "situation_header_name"
+#: tuijam/music_objects.py:279
+msgid "Situation"
 msgstr "Ситуация"
 
-#: tuijam/music_objects.py:293
-msgid "situation_header_desc"
+#: tuijam/music_objects.py:279
+msgid "Description"
 msgstr "Описание"
 
-#: tuijam/music_objects.py:352
-msgid "radiostation_header_name"
+#: tuijam/music_objects.py:337
+msgid "Station Name"
 msgstr "Название Станции"
 
-#: tuijam/music_objects.py:384
-msgid "playlist_header_name"
+#: tuijam/music_objects.py:368
+msgid "Playlist Name"
 msgstr "Название Плейлиста"
 
-#: tuijam/music_objects.py:385
-msgid "playlist_header_song_cnt"
+#: tuijam/music_objects.py:368
+msgid "# Songs"
 msgstr "Кол-во Песен"
 
-#: tuijam/ui.py:86
-msgid "search_prompt"
-msgstr "поиск"
+#: tuijam/ui.py:85
+msgid "search > "
+msgstr "поиск > "
 
-#: tuijam/ui.py:217
-msgid "prev_songs_title"
+#: tuijam/ui.py:216
+msgid "Previous Songs"
 msgstr "Предыдущие Песни"
 
-#: tuijam/ui.py:278
-msgid "status_idle"
+#: tuijam/ui.py:277
+msgid "Idle"
 msgstr "В простое"
 
-#~ msgid "Queue"
-#~ msgstr "Очередь"
-
-#~ msgid "No local credentials file found."
-#~ msgstr "Файл локальных учётных данных не найден."
-
-#~ msgid "TUIJam will now open a browser window so you can provide"
-#~ msgstr "TUIJam сейчас откроет окно браузера, чтобы Вы могли дать"
-
-#~ msgid "permission for TUIJam to access your Google Play Music account."
-#~ msgstr "разрешение TUIJam на доступ к Вашему аккаунту Google Play Music."
-
-#~ msgid "Oauth authentication Failed."
-#~ msgstr "Авторизация OAuth не удалась."
-
-#~ msgid "Could not retrieve Last.fm keys."
-#~ msgstr "Не могу получить ключи Last.fm."
-
-#~ msgid "Could not retrieve YouTube key."
-#~ msgstr "Не могу получить ключ YouTube."
-
-#~ msgid "YouTube will not be available."
-#~ msgstr "YouTube будет недоступен."
-
-#~ msgid "Liked"
-#~ msgstr "Понравилось Вам"
-
-#~ msgid "failed to restore queue. :("
-#~ msgstr "не удалось восстановить очередь. :("
-
-#~ msgid "failed to restore recently played. :("
-#~ msgstr "не удалось восстановить историю прослушиваний. :("
-
-#~ msgid "A fancy TUI client for Google Play Music."
-#~ msgstr "Навороченный терминальный клиент для Google Play Music."
-
-#~ msgid "Failed."
-#~ msgstr "Не удалось."
-
-#~ msgid ""
-#~ "Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) "
-#~ "for more information."
-#~ msgstr ""
-#~ "Произошло что-то плохое! :( Смотрите лог ($HOME/.config/tuijam/log."
-#~ "txt), чтобы узнать больше."
-
-#~ msgid "It seems that you haven't run tuijam yet."
-#~ msgstr "Похоже, что Вы ещё не запускали tuijam."
-
-#~ msgid "Please run it first, then authorize to Last.fm."
-#~ msgstr "Пожалуйста, запустите сначала его, затем авторизуйтесь в Last.fm."
-
-#~ msgid "generating Last.fm authentication token"
-#~ msgstr "генерирую токен аутентификации Last.fm"
-
-#~ msgid ""
-#~ "Please open this link in your browser and authorize the app in case the "
-#~ "window "
-#~ msgstr ""
-#~ "Пожалуйста, откройте эту ссылку в Вашем браузере и авторизуйте "
-#~ "приложение, если окно "
-
-#~ msgid "hasn't been opened automatically:"
-#~ msgstr "не открылось автоматически:"
-
-#~ msgid "After that, press Enter to get your session key..."
-#~ msgstr "После этого нажмите Enter, чтобы получить ключ сессии..."
-
-#~ msgid "Failed to get a session key. Have you authorized?"
-#~ msgstr "Не удалось получить ключ сессии. Вы авторизовались?"
-
-#~ msgid "Successfully authenticated."
-#~ msgstr "Успешно авторизован."
-
-#~ msgid "Title"
-#~ msgstr "Название"
-
-#~ msgid "Album"
-#~ msgstr "Альбом"
-
-#~ msgid "Artist"
-#~ msgstr "Исполнитель"
-
-#~ msgid "Length"
-#~ msgstr "Длина"
-
-#~ msgid "Rating"
-#~ msgstr "Оценка"
-
-#~ msgid "Youtube"
-#~ msgstr "YouTube"
-
-#~ msgid "Channel"
-#~ msgstr "Канал"
-
-#~ msgid "Year"
-#~ msgstr "Год"
-
-#~ msgid "Situation"
-#~ msgstr "Ситуация"
-
-#~ msgid "Description"
-#~ msgstr "Описание"
-
-#~ msgid "Station Name"
-#~ msgstr "Название Станции"
-
-#~ msgid "# Songs"
-#~ msgstr "Кол-во Песен"
-
-#~ msgid "search > "
-#~ msgstr "поиск > "
-
-#~ msgid "Previous Songs"
-#~ msgstr "Предыдущие Песни"
-
-#~ msgid "Idle"
-#~ msgstr "В простое"

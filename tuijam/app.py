@@ -21,7 +21,7 @@ from .music_objects import (
 )
 from .music_objects import serialize, deserialize
 from .ui import SearchInput, SearchPanel, QueuePanel, PlayBar, controls, palette
-from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE, CRED_FILE, LOCALE_DIR
+from tuijam import CONFIG_DIR, CONFIG_FILE, QUEUE_FILE, HISTORY_FILE, CRED_FILE, LOCALE_DIR, _
 from tuijam.utility import lookup_keys
 
 from .lastfm import LastFMAPI
@@ -56,7 +56,7 @@ class App(urwid.Pile):
                 self.schedule_refresh(dt=0.01)
 
         self.search_panel = SearchPanel(self)
-        search_panel_wrapped = urwid.LineBox(self.search_panel, title=_("search_results_title"))
+        search_panel_wrapped = urwid.LineBox(self.search_panel, title=_("Search Results"))
 
         # Give search panel reference to LineBox to change the title dynamically
         self.search_panel.line_box = search_panel_wrapped
@@ -71,7 +71,7 @@ class App(urwid.Pile):
         )
 
         self.queue_panel = QueuePanel(self)
-        queue_panel_wrapped = urwid.LineBox(self.queue_panel, title=_("queue_title"))
+        queue_panel_wrapped = urwid.LineBox(self.queue_panel, title=_("Queue"))
 
         queue_panel_wrapped = urwid.AttrMap(
             queue_panel_wrapped, "region_bg normal", "region_bg select"
@@ -104,14 +104,14 @@ class App(urwid.Pile):
         if not isfile(CRED_FILE):
             from oauth2client.client import FlowExchangeError
 
-            print(_("no_google_creds_found0"))
-            print(_("no_google_creds_found1"))
-            print(_("no_google_creds_found2"))
-            input(_("press_enter_to_continue"))
+            print(_("No local credentials file found."))
+            print(_("TUIJam will now open a browser window so you can provide"))
+            print(_("permission for TUIJam to access your Google Play Music account."))
+            input(_("Press enter to continue."))
             try:
                 self.g_api.perform_oauth(CRED_FILE, open_browser=True)
             except FlowExchangeError:
-                raise RuntimeError(_("oauth_failed"))
+                raise RuntimeError(_("Oauth authentication Failed."))
 
         self.g_api.oauth_login(self.g_api.FROM_MAC_ADDRESS, CRED_FILE,
                                locale=locale.getdefaultlocale()[0])
@@ -120,8 +120,8 @@ class App(urwid.Pile):
             try:
                 self.lastfm = LastFMAPI(self.lastfm_sk)
             except Exception:
-                print(_("lastfm_key_retrieval_failure"))
-                print(_("scrobbling_not_available"))
+                print(_("Could not retrieve Last.fm keys."))
+                print(_("Scrobbling will not be available."))
             # TODO handle if sk is invalid
 
         from apiclient.discovery import build
@@ -131,8 +131,8 @@ class App(urwid.Pile):
             self.youtube = build("youtube", "v3", developerKey=developer_key)
         except Exception:
             self.youtube = None
-            print(_("yt_key_retrieval_failure"))
-            print(_("yt_not_available"))
+            print(_("Could not retrieve YouTube key."))
+            print(_("YouTube will not be available."))
 
     def load_config(self):
         if not isfile(CONFIG_FILE):
@@ -476,7 +476,7 @@ class App(urwid.Pile):
         playlists = [Playlist.from_dict(playlist) for playlist in playlists]
 
         liked = [Song.from_dict(song) for song in liked]
-        playlists.append(Playlist(_("playlist_liked_title"), liked, None))
+        playlists.append(Playlist(_("Liked"), liked, None))
 
         self.search_panel.update_search_results(
             [], albums, [], situations, radio_stations, playlists, []
@@ -537,7 +537,7 @@ class App(urwid.Pile):
         sys.exit()
 
     def save_queue(self):
-        print(_("saving_queue"))
+        print(_("saving queue"))
         queue = []
 
         if self.current_song is not None:
@@ -555,7 +555,7 @@ class App(urwid.Pile):
 
         except (AttributeError, FileNotFoundError) as e:
             logging.exception(e)
-            print(_("queue_restore_fail"))
+            print(_("failed to restore queue. :("))
             self.queue_panel.clear()
 
     def save_history(self):
@@ -568,49 +568,22 @@ class App(urwid.Pile):
                 self.history = deserialize(f.read())
         except (AttributeError, FileNotFoundError) as e:
             logging.exception(e)
-            print(_("history_restore_fail"))
+            print(_("failed to restore recently played. :("))
 
 def load_locale():
     import gettext
 
-    # Install English translation (default)
-    try:
-        fallback_lang = gettext.translation('tuijam', languages=['en_US'])
-    except OSError:
-        try:
-            # Try to find it in ~/.config/tuijam/lang
-            # If installed without root
-            fallback_lang = gettext.translation(
-                'tuijam', localedir=LOCALE_DIR, languages=['en_US']
-            )
-        except OSError as e:
-            print("Failed to load English locale, which is default.")
-            raise e
-
-    fallback_lang.install()
-
     # Load pre-installed translation
-    locale = None
-    try:
-        locale = gettext.translation('tuijam')
-        locale.add_fallback(fallback_lang)
-    except OSError as e:
-        pass
-    else:
-        locale.install()
+    locale = gettext.find('tuijam')
+    if locale is not None:
+        gettext.bindtextdomain('tuijam')
+        gettext.textdomain('tuijam')
 
     # Then load user translation
-    try:
-        locale_user = gettext.translation('tuijam', localedir=LOCALE_DIR)
-        if locale is not None:
-            locale_user.add_fallback(locale)
-        else:
-            locale_user.add_fallback(fallback_lang)
-    except OSError as e:
-        pass
-    else:
-        locale_user.install()
-
+    locale = gettext.find('tuijam', LOCALE_DIR)
+    if locale is not None:
+        gettext.bindtextdomain('tuijam', LOCALE_DIR)
+        gettext.textdomain('tuijam')
 
 def main():
     import argparse
@@ -618,7 +591,7 @@ def main():
     load_locale()
 
     parser = argparse.ArgumentParser(
-        "TUIJam", description=_("tuijam_app_desc")
+        "TUIJam", description=_("A fancy TUI client for Google Play Music.")
     )
     parser.add_argument(
         "action", choices=["", "configure_last_fm"], default="", nargs="?"
@@ -626,7 +599,7 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true")  # TODO: use this
     args = parser.parse_args()
 
-    print(_("starting_up"))
+    print(_("starting up."))
     makedirs(CONFIG_DIR, exist_ok=True)
 
     log_file = join(CONFIG_DIR, "log.txt")
@@ -640,22 +613,22 @@ def main():
         exit(0)
 
     app = App()
-    print(_("logging_in"))
+    print(_("logging in."))
     app.login()
 
     if app.mpris_enabled:
         from .mpris import setup_mpris
 
-        print(_("enabling_ext_control"))
+        print(_("enabling external control."))
         app.mpris = setup_mpris(app)
         if not app.mpris:
-            print(_("fail"))
+            print(_("Failed."))
 
     if app.persist_queue:
-        print(_("restoring_queue"))
+        print(_("restoring queue"))
         app.restore_queue()
 
-    print(_("restoring_history"))
+    print(_("restoring history"))
     app.restore_history()
 
     if app.video:
@@ -677,7 +650,7 @@ def main():
     except Exception as e:
         logging.exception(e)
         print(
-            _("exception_thrown")
+            _("Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) for more information.")
         )
         app.cleanup()
 

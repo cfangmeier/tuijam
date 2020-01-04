@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tuijam 0.6.2\n"
 "Report-Msgid-Bugs-To: sh1ftr@protonmail.ch\n"
-"POT-Creation-Date: 2019-12-15 18:33+1000\n"
+"POT-Creation-Date: 2019-12-02 17:01+1000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,204 +17,201 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
 
-#: tuijam/app.py:59 tuijam/ui.py:197 tuijam/ui.py:205
-msgid "search_results_title"
+#: tuijam/app.py:58 tuijam/ui.py:197 tuijam/ui.py:205
+msgid "Search Results"
 msgstr ""
 
-#: tuijam/app.py:74
-msgid "queue_title"
+#: tuijam/app.py:73
+msgid "Queue"
+msgstr ""
+
+#: tuijam/app.py:106
+msgid "No local credentials file found."
 msgstr ""
 
 #: tuijam/app.py:107
-msgid "no_google_creds_found0"
+msgid "TUIJam will now open a browser window so you can provide"
 msgstr ""
 
 #: tuijam/app.py:108
-msgid "no_google_creds_found1"
+msgid "permission for TUIJam to access your Google Play Music account."
 msgstr ""
 
 #: tuijam/app.py:109
-msgid "no_google_creds_found2"
+msgid "Press enter to continue."
 msgstr ""
 
-#: tuijam/app.py:110
-msgid "press_enter_to_continue"
+#: tuijam/app.py:113
+msgid "Oauth authentication Failed."
 msgstr ""
 
-#: tuijam/app.py:114
-msgid "oauth_failed"
+#: tuijam/app.py:121
+msgid "Could not retrieve Last.fm keys."
 msgstr ""
 
-#: tuijam/app.py:123
-msgid "lastfm_key_retrieval_failure"
+#: tuijam/app.py:122
+msgid "Scrobbling will not be available."
 msgstr ""
 
-#: tuijam/app.py:124
-msgid "scrobbling_not_available"
+#: tuijam/app.py:132
+msgid "Could not retrieve YouTube key."
 msgstr ""
 
-#: tuijam/app.py:134
-msgid "yt_key_retrieval_failure"
+#: tuijam/app.py:133
+msgid "YouTube will not be available."
 msgstr ""
 
-#: tuijam/app.py:135
-msgid "yt_not_available"
+#: tuijam/app.py:477
+msgid "Liked"
 msgstr ""
 
-#: tuijam/app.py:479
-msgid "playlist_liked_title"
+#: tuijam/app.py:538
+msgid "saving queue"
 msgstr ""
 
-#: tuijam/app.py:540
-msgid "saving_queue"
+#: tuijam/app.py:556
+msgid "failed to restore queue. :("
 msgstr ""
 
-#: tuijam/app.py:558
-msgid "queue_restore_fail"
+#: tuijam/app.py:569
+msgid "failed to restore recently played. :("
 msgstr ""
 
-#: tuijam/app.py:571
-msgid "history_restore_fail"
+#: tuijam/app.py:592
+msgid "A fancy TUI client for Google Play Music."
 msgstr ""
 
-#: tuijam/app.py:619
-msgid "tuijam_app_desc"
+#: tuijam/app.py:600
+msgid "starting up."
 msgstr ""
 
-#: tuijam/app.py:627
-msgid "starting_up"
+#: tuijam/app.py:614
+msgid "logging in."
 msgstr ""
 
-#: tuijam/app.py:641
-msgid "logging_in"
+#: tuijam/app.py:620
+msgid "enabling external control."
 msgstr ""
 
-#: tuijam/app.py:647
-msgid "enabling_ext_control"
+#: tuijam/app.py:623
+msgid "Failed."
 msgstr ""
 
-#: tuijam/app.py:650
-msgid "fail"
+#: tuijam/app.py:626
+msgid "restoring queue"
 msgstr ""
 
-#: tuijam/app.py:653
-msgid "restoring_queue"
+#: tuijam/app.py:629
+msgid "restoring history"
 msgstr ""
 
-#: tuijam/app.py:656
-msgid "restoring_history"
-msgstr ""
-
-#: tuijam/app.py:678
-msgid "exception_thrown"
+#: tuijam/app.py:651
+msgid ""
+"Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) "
+"for more information."
 msgstr ""
 
 #: tuijam/lastfm.py:152
-msgid "lastfm_err_first_run0"
+msgid "It seems that you haven't run tuijam yet."
 msgstr ""
 
 #: tuijam/lastfm.py:153
-msgid "lastfm_err_first_run1"
+msgid "Please run it first, then authorize to Last.fm."
 msgstr ""
 
 #: tuijam/lastfm.py:156
-msgid "lastfm_generating_token"
+msgid "generating Last.fm authentication token"
 msgstr ""
 
-#: tuijam/lastfm.py:166
-msgid "lastfm_open_auth_link_prompt"
+#: tuijam/lastfm.py:167
+msgid ""
+"Please open this link in your browser and authorize the app in case the "
+"window "
 msgstr ""
 
-#: tuijam/lastfm.py:169
-msgid "lastfm_press_enter_to_get_sk"
+#: tuijam/lastfm.py:168
+msgid "hasn't been opened automatically:"
 msgstr ""
 
-#: tuijam/lastfm.py:171
-msgid "lastfm_auth_fail"
+#: tuijam/lastfm.py:172
+msgid "After that, press Enter to get your session key..."
 msgstr ""
 
-#: tuijam/lastfm.py:181
-msgid "lastfm_auth_success"
+#: tuijam/lastfm.py:174
+msgid "Failed to get a session key. Have you authorized?"
+msgstr ""
+
+#: tuijam/lastfm.py:184
+msgid "Successfully authenticated."
 msgstr ""
 
 #: tuijam/music_objects.py:73 tuijam/music_objects.py:76
-#: tuijam/music_objects.py:161 tuijam/music_objects.py:164
-msgid "by"
+#: tuijam/music_objects.py:158 tuijam/music_objects.py:161
+msgid "by "
 msgstr ""
 
-#: tuijam/music_objects.py:94
-msgid "song_header_title"
+#: tuijam/music_objects.py:93
+msgid "Title"
 msgstr ""
 
-#: tuijam/music_objects.py:94
-msgid "song_header_album"
+#: tuijam/music_objects.py:93 tuijam/music_objects.py:202
+msgid "Album"
 msgstr ""
 
-#: tuijam/music_objects.py:95
-msgid "song_header_artist"
+#: tuijam/music_objects.py:93 tuijam/music_objects.py:202
+#: tuijam/music_objects.py:248
+msgid "Artist"
 msgstr ""
 
-#: tuijam/music_objects.py:95
-msgid "song_header_length"
+#: tuijam/music_objects.py:93
+msgid "Length"
 msgstr ""
 
-#: tuijam/music_objects.py:96
-msgid "song_header_rating"
+#: tuijam/music_objects.py:93
+msgid "Rating"
 msgstr ""
 
-#: tuijam/music_objects.py:173
-msgid "yt_header_name"
+#: tuijam/music_objects.py:168
+msgid "Youtube"
 msgstr ""
 
-#: tuijam/music_objects.py:173
-msgid "yt_header_channel"
+#: tuijam/music_objects.py:168
+msgid "Channel"
 msgstr ""
 
-#: tuijam/music_objects.py:210
-msgid "album_header_name"
+#: tuijam/music_objects.py:202
+msgid "Year"
 msgstr ""
 
-#: tuijam/music_objects.py:211
-msgid "album_header_artist"
+#: tuijam/music_objects.py:280
+msgid "Situation"
 msgstr ""
 
-#: tuijam/music_objects.py:212
-msgid "album_header_year"
+#: tuijam/music_objects.py:280
+msgid "Description"
 msgstr ""
 
-#: tuijam/music_objects.py:259
-msgid "artist_header_name"
+#: tuijam/music_objects.py:338
+msgid "Station Name"
 msgstr ""
 
-#: tuijam/music_objects.py:292
-msgid "situation_header_name"
+#: tuijam/music_objects.py:369
+msgid "Playlist Name"
 msgstr ""
 
-#: tuijam/music_objects.py:293
-msgid "situation_header_desc"
-msgstr ""
-
-#: tuijam/music_objects.py:352
-msgid "radiostation_header_name"
-msgstr ""
-
-#: tuijam/music_objects.py:384
-msgid "playlist_header_name"
-msgstr ""
-
-#: tuijam/music_objects.py:385
-msgid "playlist_header_song_cnt"
+#: tuijam/music_objects.py:369
+msgid "# Songs"
 msgstr ""
 
 #: tuijam/ui.py:86
-msgid "search_prompt"
+msgid "search > "
 msgstr ""
 
 #: tuijam/ui.py:217
-msgid "prev_songs_title"
+msgid "Previous Songs"
 msgstr ""
 
 #: tuijam/ui.py:278
-msgid "status_idle"
+msgid "Idle"
 msgstr ""
 
