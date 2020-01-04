@@ -202,8 +202,11 @@ class SearchPanel(urwid.ListBox):
                 pass
 
     def update_search_results(
-        self, *categories, title=_("Search Results"), isprevsong=False
+        self, *categories, title=None, isprevsong=False
     ):
+        if title is None:
+            title = _("Search Results")
+
         if not self.viewing_previous_songs:  # only remember search history
             self.search_history.append((self.get_focus()[1], self.search_results))
 
