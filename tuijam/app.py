@@ -572,12 +572,14 @@ class App(urwid.Pile):
 
 def load_locale():
     import gettext
+    import importlib_resources
 
     # Load pre-installed translation
-    locale = gettext.find('tuijam')
-    if locale is not None:
-        gettext.bindtextdomain('tuijam')
-        gettext.textdomain('tuijam')
+    with importlib_resources.path('tuijam', 'lang') as locale_path:
+        locale = gettext.find('tuijam', locale_path)
+        if locale is not None:
+            gettext.bindtextdomain('tuijam', locale_path)
+            gettext.textdomain('tuijam')
 
     # Then load user translation
     locale = gettext.find('tuijam', LOCALE_DIR)

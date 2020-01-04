@@ -1,14 +1,14 @@
 # Translations template for tuijam.
-# Copyright (C) 2019 Caleb Fangmeier
+# Copyright (C) 2020 Caleb Fangmeier
 # This file is distributed under the same license as the tuijam project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: tuijam 0.6.2\n"
 "Report-Msgid-Bugs-To: sh1ftr@protonmail.ch\n"
-"POT-Creation-Date: 2019-12-02 17:01+1000\n"
+"POT-Creation-Date: 2020-01-04 21:05+1000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,95 +17,95 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
 
-#: tuijam/app.py:58 tuijam/ui.py:197 tuijam/ui.py:205
+#: tuijam/app.py:59 tuijam/ui.py:197 tuijam/ui.py:205
 msgid "Search Results"
 msgstr ""
 
-#: tuijam/app.py:73
+#: tuijam/app.py:74
 msgid "Queue"
 msgstr ""
 
-#: tuijam/app.py:106
+#: tuijam/app.py:107
 msgid "No local credentials file found."
 msgstr ""
 
-#: tuijam/app.py:107
+#: tuijam/app.py:108
 msgid "TUIJam will now open a browser window so you can provide"
 msgstr ""
 
-#: tuijam/app.py:108
+#: tuijam/app.py:109
 msgid "permission for TUIJam to access your Google Play Music account."
 msgstr ""
 
-#: tuijam/app.py:109
+#: tuijam/app.py:110
 msgid "Press enter to continue."
 msgstr ""
 
-#: tuijam/app.py:113
+#: tuijam/app.py:114
 msgid "Oauth authentication Failed."
 msgstr ""
 
-#: tuijam/app.py:121
+#: tuijam/app.py:123
 msgid "Could not retrieve Last.fm keys."
 msgstr ""
 
-#: tuijam/app.py:122
+#: tuijam/app.py:124
 msgid "Scrobbling will not be available."
 msgstr ""
 
-#: tuijam/app.py:132
+#: tuijam/app.py:134
 msgid "Could not retrieve YouTube key."
 msgstr ""
 
-#: tuijam/app.py:133
+#: tuijam/app.py:135
 msgid "YouTube will not be available."
 msgstr ""
 
-#: tuijam/app.py:477
+#: tuijam/app.py:479
 msgid "Liked"
 msgstr ""
 
-#: tuijam/app.py:538
+#: tuijam/app.py:540
 msgid "saving queue"
 msgstr ""
 
-#: tuijam/app.py:556
+#: tuijam/app.py:558
 msgid "failed to restore queue. :("
 msgstr ""
 
-#: tuijam/app.py:569
+#: tuijam/app.py:571
 msgid "failed to restore recently played. :("
 msgstr ""
 
-#: tuijam/app.py:592
+#: tuijam/app.py:596
 msgid "A fancy TUI client for Google Play Music."
 msgstr ""
 
-#: tuijam/app.py:600
+#: tuijam/app.py:604
 msgid "starting up."
 msgstr ""
 
-#: tuijam/app.py:614
+#: tuijam/app.py:618
 msgid "logging in."
 msgstr ""
 
-#: tuijam/app.py:620
+#: tuijam/app.py:624
 msgid "enabling external control."
 msgstr ""
 
-#: tuijam/app.py:623
+#: tuijam/app.py:627
 msgid "Failed."
 msgstr ""
 
-#: tuijam/app.py:626
+#: tuijam/app.py:630
 msgid "restoring queue"
 msgstr ""
 
-#: tuijam/app.py:629
+#: tuijam/app.py:633
 msgid "restoring history"
 msgstr ""
 
-#: tuijam/app.py:651
+#: tuijam/app.py:655
 msgid ""
 "Something bad happened! :( see log file ($HOME/.config/tuijam/log.txt) "
 "for more information."

@@ -182,7 +182,7 @@ There is an experimental "vim mode" which can be enabled by adding `vim_mode: tr
 # Translations
 TUIJam supports translations! It has only English and Russian for now, but you can make your own ones.
 
-You can grab .pot file from the repo (`lang` folder) and work with it or:
+You can grab .pot file from the repo (`tuijam/lang` folder) and work with it or:
 
 1. Clone the repo
 2. Run `python setup.py extract_messages` to generate .pot file
