@@ -4,8 +4,8 @@ from tuijam import __version__
 
 import sys
 
-if sys.version_info < (3, 6):
-    print("tuijam requires python>=3.6.")
+if sys.version_info < (3, 7):
+    print("tuijam requires python>=3.7")
     exit(1)
 
 with open("requirements.txt") as f:

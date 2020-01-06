@@ -583,10 +583,10 @@ class App(urwid.Pile):
 
 def load_locale():
     import gettext
-    import importlib_resources
+    from importlib.resources import path
 
     # Load pre-installed translation
-    with importlib_resources.path('tuijam', 'lang') as locale_path:
+    with path('tuijam', 'lang') as locale_path:
         locale = gettext.find('tuijam', locale_path)
         if locale is not None:
             gettext.bindtextdomain('tuijam', locale_path)
