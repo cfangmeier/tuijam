@@ -181,6 +181,26 @@ controls:
 
 There is an experimental "vim mode" which can be enabled by adding `vim_mode: true` to your config file. With this mode enabled, pressing escape will mask keys from being typed into the search bar (press `i` to re-enable typing). This makes it more convenient to have single key commands for controlling playback (e.g. instead of `ctrl-n` for next song, simply `n`).
 
+# Translations
+TUIJam supports translations! It has only English and Russian for now, but you can make your own ones.
+
+You can grab .pot file from the repo (`tuijam/lang` folder) and work with it or:
+
+1. Clone the repo
+2. Run `python setup.py extract_messages` to generate .pot file
+3. Run `python setup.py init_catalog -l <LOCALE_CODE>` to generate a new locale.
+4. Update the locale with `python setup.py update_catalog -l <LOCALE_CODE> -o <LOCALE_PATH>`
+5. Compile your locale with `python setup.py compile_catalog`.
+
+`<LOCALE_CODE>` is [ICU locale ID](https://www.localeplanet.com/icu/)
+
+User locales are supported. Copy generated .mo files to $HOME/.config/tuijam/lang/<LOCALE_CODE>/LC_MESSAGES folder. 
+Notice that .po files are not supported for now.
+
+The player's locale can be overridden by launching with LC_ALL environment variables. (`LC_ALL="en_US.UTF-8" tuijam`)
+
+TUIJam uses Babel for locale generation. You can look [its docs](http://babel.pocoo.org/en/latest/index.html) for further information.
+
 # Thanks
 TUIJam was heavily inspired by the
 [gpymusic](https://github.com/christopher-dG/gpymusic) project, and, of course,

@@ -1,5 +1,6 @@
 import urwid
 
+from tuijam import _
 from .music_objects import (
     Song,
     Artist,
@@ -83,7 +84,7 @@ controls = dict(
 class SearchInput(urwid.Edit):
     def __init__(self, app):
         self.app = app
-        super().__init__("search > ", multiline=False, allow_tab=False)
+        super().__init__(_("search > "), multiline=False, allow_tab=False)
 
     def keypress(self, size, key):
         if key == "enter":
@@ -194,7 +195,7 @@ class SearchPanel(urwid.ListBox):
 
             self.set_search_results(list(search_history))
             self.viewing_previous_songs = False
-            self.line_box.set_title("Search Results")
+            self.line_box.set_title(_("Search Results"))
 
             try:
                 self.set_focus(prev_focus)
@@ -202,8 +203,11 @@ class SearchPanel(urwid.ListBox):
                 pass
 
     def update_search_results(
-        self, *categories, title="Search Results", isprevsong=False
+        self, *categories, title=None, isprevsong=False
     ):
+        if title is None:
+            title = _("Search Results")
+
         if not self.viewing_previous_songs:  # only remember search history
             self.search_history.append((self.get_focus()[1], self.search_results))
 
@@ -214,7 +218,7 @@ class SearchPanel(urwid.ListBox):
 
     def view_previous_songs(self, songs, yt_vids):
         self.update_search_results(
-            songs, yt_vids, title="Previous Songs", isprevsong=True
+            songs, yt_vids, title=_("Previous Songs"), isprevsong=True
         )
 
     def set_search_results(self, categories):
@@ -275,7 +279,7 @@ class PlayBar(urwid.ProgressBar):
 
     def get_text(self):
         if self.app.current_song is None:
-            return "Idle"
+            return _("Idle")
 
         progress, total = self.get_prog_tot()
         song = self.app.current_song

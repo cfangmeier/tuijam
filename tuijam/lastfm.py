@@ -5,7 +5,7 @@ from datetime import datetime
 import requests
 import yaml
 
-from tuijam import __version__, CONFIG_DIR
+from tuijam import __version__, CONFIG_DIR, _
 from tuijam.utility import lookup_keys
 
 
@@ -149,11 +149,11 @@ class LastFMAPI:
 
         config_file = join(CONFIG_DIR, "config.yaml")
         if not isfile(config_file):
-            print("It seems that you haven't run tuijam yet.")
-            print("Please run it first, then authorize to Last.fm.")
+            print(_("It seems that you haven't run tuijam yet."))
+            print(_("Please run it first, then authorize to Last.fm."))
             return
 
-        print("generating Last.fm authentication token")
+        print(_("generating Last.fm authentication token"))
         api = LastFMAPI()
         token = api.get_token()
         auth_url = api.get_auth_url(token)
@@ -164,14 +164,14 @@ class LastFMAPI:
 
         print()
         print(
-            "Please open this link in your browser and authorize the app in case the window "
-            "hasn't been opened automatically:"
+            _("Please open this link in your browser and authorize the app in case the window ").join(
+            _("hasn't been opened automatically:"))
         )
         print(auth_url)
         print()
-        input("After that, press Enter to get your session key...")
+        input(_("After that, press Enter to get your session key..."))
         if not api.auth_by_token(token):
-            print("Failed to get a session key. Have you authorized?")
+            print(_("Failed to get a session key. Have you authorized?"))
         else:
             with open(config_file, "r+") as f:
                 lastfm_sk = api.sk
@@ -181,4 +181,4 @@ class LastFMAPI:
                 yaml.safe_dump(config, f, default_flow_style=False)
                 f.truncate()
                 f.close()
-            print("Successfully authenticated.")
+            print(_("Successfully authenticated."))
