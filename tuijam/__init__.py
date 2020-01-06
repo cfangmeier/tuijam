@@ -2,7 +2,7 @@ from os.path import join, expanduser
 import gettext
 _ = gettext.gettext
 
-__version__ = "0.6.4"
+__version__ = "0.7.0"
 CONFIG_DIR = join(expanduser("~"), ".config", "tuijam")
 CONFIG_FILE = join(CONFIG_DIR, "config.yaml")
 LOG_FILE = join(CONFIG_DIR, "log.txt")
