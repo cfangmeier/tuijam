@@ -10,7 +10,7 @@ listening to music for Google Play Music All-Access subscribers.
 [![asciicast](https://asciinema.org/a/bhsWdt4M2CQwfWSjWNXBiTcqs.svg)](https://asciinema.org/a/bhsWdt4M2CQwfWSjWNXBiTcqs)
 
 # Dependencies
-* [Python >= 3.6](https://www.python.org/downloads)
+* [Python >= 3.7](https://www.python.org/downloads)
 * [mpv](https://mpv.io)
 * [youtube-dl](https://rg3.github.io/youtube-dl/)
 
