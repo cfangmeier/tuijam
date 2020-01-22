@@ -2,6 +2,8 @@ import logging
 
 from .music_objects import Song, YTVideo
 
+"""
+"""
 
 def setup_mpris(app):
     from pydbus import SessionBus, Variant
@@ -10,52 +12,68 @@ def setup_mpris(app):
     class MPRIS:
         """
 <node>
-<interface name="org.mpris.MediaPlayer2">
-<property name="CanQuit" type="b" access="read" />
-<property name="CanRaise" type="b" access="read" />
-<property name="HasTrackList" type="b" access="read" />
-<property name="Identity" type="s" access="read" />
-<property name="SupportedMimeTypes" type="as" access="read" />
-<property name="SupportedUriSchemes" type="as" access="read" />
-<method name="Quit" />
-<method name="Raise" />
-</interface>
-<interface name="org.mpris.MediaPlayer2.Player">
-<property name="PlaybackStatus" type="s" access="read" />
-<property name="Rate" type="d" access="readwrite" />
-<property name="Metadata" type="a{sv}" access="read"/>
-<property name="Volume" type="d" access="readwrite" />
-<property name="Position" type="x" access="read" />
-<property name="MinimumRate" type="d" access="readwrite" />
-<property name="MaximumRate" type="d" access="readwrite" />
-<property name="CanGoNext" type="b" access="read" />
+  <interface name="org.mpris.MediaPlayer2">
+    <property name="CanQuit" type="b" access="read" />
+    <property name="CanRaise" type="b" access="read" />
+    <property name="HasTrackList" type="b" access="read" />
+    <property name="Identity" type="s" access="read" />
+    <property name="SupportedMimeTypes" type="as" access="read" />
+    <property name="SupportedUriSchemes" type="as" access="read" />
+    <method name="Quit" />
+    <method name="Raise" />
+  </interface>
+  <interface name="org.mpris.MediaPlayer2.Player">
+    <property name="PlaybackStatus" type="s" access="read" />
+    <property name="Rate" type="d" access="readwrite" />
+    <property name="Metadata" type="a{sv}" access="read"/>
+    <property name="Volume" type="d" access="readwrite" />
+    <property name="Position" type="x" access="read" />
+    <property name="MinimumRate" type="d" access="readwrite" />
+    <property name="MaximumRate" type="d" access="readwrite" />
+    <property name="CanGoNext" type="b" access="read" />
+    <property name="CanGoPrevious" type="b" access="read" />
+    <property name="CanPlay" type="b" access="read" />
+    <property name="CanPause" type="b" access="read" />
+    <property name="CanSeek" type="b" access="read" />
+    <property name="CanControl" type="b" access="read" />
+    <property name="Shuffle" type="b" access="readwrite" />
+    <property name="LoopStatus" type="s" access="readwrite" />
 
-<property name="CanGoPrevious" type="b" access="read" />
-<property name="CanPlay" type="b" access="read" />
-<property name="CanPause" type="b" access="read" />
-<property name="CanSeek" type="b" access="read" />
-<property name="CanControl" type="b" access="read" />
-
-<method name="Next" />
-<method name="Previous" />
-<method name="Pause" />
-<method name="PlayPause" />
-<method name="Stop" />
-<method name="Play" />
-<method name="Seek">
-  <arg type="x" direction="in" />
-</method>
-<method name="SetPosition">
-  <arg type="o" direction="in" />
-  <arg type="x" direction="in" />
-</method>
-<method name="OpenUri">
-  <arg type="s" direction="in" />
-</method>
-</interface>
+    <method name="Next" />
+    <method name="Previous" />
+    <method name="Pause" />
+    <method name="PlayPause" />
+    <method name="Stop" />
+    <method name="Play" />
+    <method name="Seek">
+      <arg type="x" direction="in" />
+    </method>
+    <method name="SetPosition">
+      <arg type="o" direction="in" />
+      <arg type="x" direction="in" />
+    </method>
+    <method name="OpenUri">
+      <arg type="s" direction="in" />
+    </method>
+  </interface>
+  <interface name="org.bluez.Media1">
+    <method name="RegisterEndpoint">
+      <arg name="endpoint" type="o" direction="in"/>
+      <arg name="properties" type="a{sv}" direction="in"/>
+    </method>
+    <method name="UnregisterEndpoint">
+      <arg name="endpoint" type="o" direction="in"/>
+    </method>
+    <method name="RegisterPlayer">
+      <arg name="player" type="o" direction="in"/>
+      <arg name="properties" type="a{sv}" direction="in"/>
+    </method>
+    <method name="UnregisterPlayer">
+      <arg name="player" type="o" direction="in"/>
+    </method>
+  </interface>
 </node>
         """
-
         PropertiesChanged = signal()
 
         def __init__(self, app):
@@ -198,6 +216,22 @@ def setup_mpris(app):
         def CanControl(self):
             return True
 
+        @property
+        def Shuffle(self):
+            return False
+
+        @Shuffle.setter
+        def Shuffle(self, shuffle):
+            pass
+
+        @property
+        def LoopStatus(self):
+            return "None"
+
+        @LoopStatus.setter
+        def LoopStatus(self, loop_status):
+            pass
+
         def Next(self):
             self.app.queue_panel.play_next()
 
@@ -214,8 +248,9 @@ def setup_mpris(app):
         def Stop(self):
             self.app.stop()
 
-        def Play(self, song_id):
-            self.app.toggle_play()
+        def Play(self):
+            if self.app.play_state != "play":
+                self.app.toggle_play()
 
         def Seek(self, offset):
             pass
@@ -224,6 +259,18 @@ def setup_mpris(app):
             pass
 
         def OpenUri(self, uri):
+            pass
+
+        def RegisterEndpoint(self, endpoint, properties):
+            pass
+
+        def UnregisterEndpoint(self, endpoint):
+            pass
+
+        def RegisterPlayer(self, player, properties):
+            pass
+
+        def UnregisterPlayer(self, player):
             pass
 
     try:
