@@ -37,7 +37,7 @@ class MusicObject:
 
 
 class Song(MusicObject):
-    ui_weights = (1, 2, 1, 0.2, 0.2)
+    ui_weights = (2, 1, 1, 0.2, 0.2)
 
     def __init__(
         self,
