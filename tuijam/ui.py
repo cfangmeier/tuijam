@@ -32,6 +32,8 @@ RATE_UI = {
     5: "▲",  # Thumbs up
 }
 
+DEFAULT_SEARCH_LIMIT = 10_000
+
 palette = {
     "header": ["white,underline", "default"],
     "search-normal": ["white", "default"],
@@ -222,7 +224,7 @@ class SearchPanel(urwid.ListBox):
         )
 
     def set_search_results(self, categories):
-        def filter_none(lst, limit=30):
+        def filter_none(lst, limit=DEFAULT_SEARCH_LIMIT):
             filtered = [obj for obj in lst if obj is not None]
 
             if self.viewing_previous_songs:
