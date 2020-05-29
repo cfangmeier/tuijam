@@ -32,8 +32,6 @@ RATE_UI = {
     5: "▲",  # Thumbs up
 }
 
-DEFAULT_SEARCH_LIMIT = 10_000
-
 palette = {
     "header": ["white,underline", "default"],
     "search-normal": ["white", "default"],
@@ -61,6 +59,7 @@ controls = dict(
     down="j",
     up="k",
     expand=["e", "enter"],
+    expand_full=["E"],
     seek_pos=[">", "shift right"],
     seek_neg=["<", "shift left"],
     vol_up=["+", "="],
@@ -145,6 +144,7 @@ class SearchPanel(urwid.ListBox):
         self.search_results = self.SearchResults([])
         self.line_box = None
         self.viewing_previous_songs = False
+        self.no_limit = False
 
         super().__init__(self.walker)
 
@@ -179,6 +179,9 @@ class SearchPanel(urwid.ListBox):
         elif key in controls["expand"]:
             if self.selected_search_obj() is not None:
                 self.app.expand(self.selected_search_obj())
+        elif key in controls["expand_full"]:
+            if self.selected_search_obj() is not None:
+                self.app.expand(self.selected_search_obj(),no_limit=True)
         elif key in controls["back"]:
             self.back()
         elif key in controls["radio"]:
@@ -205,7 +208,7 @@ class SearchPanel(urwid.ListBox):
                 pass
 
     def update_search_results(
-        self, *categories, title=None, isprevsong=False
+        self, *categories, title=None, isprevsong=False, no_limit=False
     ):
         if title is None:
             title = _("Search Results")
@@ -214,6 +217,7 @@ class SearchPanel(urwid.ListBox):
             self.search_history.append((self.get_focus()[1], self.search_results))
 
         self.viewing_previous_songs = isprevsong
+        self.no_limit = no_limit
 
         self.set_search_results(categories)
         self.line_box.set_title(title)
@@ -224,10 +228,11 @@ class SearchPanel(urwid.ListBox):
         )
 
     def set_search_results(self, categories):
-        def filter_none(lst, limit=DEFAULT_SEARCH_LIMIT):
+        def filter_none(lst, limit=30):
             filtered = [obj for obj in lst if obj is not None]
-
-            if self.viewing_previous_songs:
+            
+            if (self.viewing_previous_songs) or (self.no_limit):
+                self.no_limit = False
                 return filtered
             else:
                 return filtered[:limit]
