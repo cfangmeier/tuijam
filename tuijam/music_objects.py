@@ -37,7 +37,7 @@ class MusicObject:
 
 
 class Song(MusicObject):
-    ui_weights = (1, 2, 1, 0.2, 0.2)
+    ui_weights = (2, 1, 1, 0.2, 0.2)
 
     def __init__(
         self,
@@ -183,6 +183,8 @@ class YTVideo(MusicObject):
 
 
 class Album(MusicObject):
+    ui_weights = (1, 1, 0.1)
+
     def __init__(self, title, artist, artistId, year, id_):
 
         self.title = title
@@ -195,11 +197,11 @@ class Album(MusicObject):
         return f"<Album title:{self.title}, artist:{self.artist}, year:{self.year}>"
 
     def ui(self):
-        return self.to_ui(self.title, self.artist, self.year)
+        return self.to_ui(self.title, self.artist, self.year, weights=self.ui_weights)
 
-    @staticmethod
-    def header():
-        return MusicObject.header_ui(_("Album"), _("Artist"), _("Year"))
+    @classmethod
+    def header(cls):
+        return MusicObject.header_ui(_("Album"), _("Artist"), _("Year"), weights=cls.ui_weights)
 
     @staticmethod
     def from_dict(d):
