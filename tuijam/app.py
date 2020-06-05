@@ -357,7 +357,7 @@ class App(urwid.Pile):
         else:
             super().mouse_event(size, event, button, col, row, focus=focus)
 
-    def expand(self, obj):
+    def expand(self, obj, no_limit=False):
         if obj is None:
             return
 
@@ -402,7 +402,10 @@ class App(urwid.Pile):
 
         elif isinstance(obj, RadioStation):
             station_id = obj.get_station_id(self.g_api)
-            songs = self.get_radio_songs(station_id)
+            if no_limit:
+                songs = self.get_radio_songs(station_id,n=150)
+            else:
+                songs = self.get_radio_songs(station_id)
             radio_stations = [obj]
 
         elif isinstance(obj, Playlist):
@@ -413,7 +416,7 @@ class App(urwid.Pile):
             yt_vids = [obj]
 
         self.search_panel.update_search_results(
-            songs, albums, artists, situations, radio_stations, playlists, yt_vids
+            songs, albums, artists, situations, radio_stations, playlists, yt_vids, no_limit=no_limit
         )
 
     def youtube_search(
